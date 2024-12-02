@@ -41,11 +41,11 @@ void search_adj_element(const std::vector<std::vector<int>> &cny,
         }
     }
 
-    for (int ielem = 0; ielem < cny.size(); ielem++) {
-        std::cout << "ielem: " << ielem << std::endl;
-        for (int iface = 0; iface < 4; iface++) {
-            std::cout << "iface: " << iface << " " << adj_elem[ielem][iface] << std::endl;
-        }
-    }
+    // for (int ielem = 0; ielem < cny.size(); ielem++) {
+    //     std::cout << "ielem: " << ielem << std::endl;
+    //     for (int iface = 0; iface < 4; iface++) {
+    //         std::cout << "iface: " << iface << " " << adj_elem[ielem][iface] << std::endl;
+    //     }
+    // }
 
 }

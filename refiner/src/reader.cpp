@@ -60,3 +60,23 @@ void read_mesh(const std::string &data_dir,
         }
     }
 }
+
+void read_displacement(const std::string &data_dir, 
+                       const int &nnode, 
+                       std::vector<std::vector<double>> &displacement) {
+    std::vector<double> buf_displacement(3 * nnode);
+
+    FILE *fp;
+    // Read displacement
+    if ((fp = fopen((data_dir + "displacement.bin").c_str(), "r")) == NULL) {
+        std::cerr << "Error: cannot open file displacement.bin" << std::endl;
+        return;
+    }
+    fread(&buf_displacement[0], sizeof(double), 3 * nnode, fp);
+    fclose(fp);
+    for (int inode = 0; inode < nnode; inode++) {
+        for (int idim = 0; idim < 3; idim++) {
+            displacement[inode][idim] = buf_displacement[inode * 3 + idim];
+        }
+    }
+}
