@@ -2,7 +2,6 @@
 #include <fstream>
 #include <iostream>
 #include <vector>
-
 #include "reader.hpp"
 
 void read_shape(const std::string &data_dir, 
@@ -44,7 +43,7 @@ void read_mesh(const std::string &data_dir,
     fclose(fp);
     for (int ielem = 0; ielem < nelem; ielem++) {
         for (int inode = 0; inode < 10; inode++) {
-            cny[ielem][inode] = buf_cny[ielem * 11 + inode];
+            cny[ielem][inode] = buf_cny[ielem * 11 + inode] - 1;
         }
     }
 
