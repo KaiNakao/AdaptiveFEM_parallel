@@ -8,7 +8,7 @@
 #include "posterior_error.hpp"
 
 int main() {
-    std::string data_dir("/data6/itou/AFEM/analysis_result/");
+    std::string data_dir("/data6/itou/AFEM/data/analysis_result_iburi/");
 
     int nelem, nnode_linear, nnode_quad;
     read_shape(data_dir, nelem, nnode_linear, nnode_quad);
@@ -29,7 +29,8 @@ int main() {
     }
 
     std::vector<std::vector<int>> adj_elem(nelem, std::vector<int>(4));
-    search_adj_element(cny, coor, adj_elem);
+    std::map<std::set<int>, std::vector<int>> face_to_elems;
+    search_adj_element(cny, coor, adj_elem, face_to_elems);
 
-    poterior_error_estimation(cny, coor, displacement, adj_elem);
+    posterior_error_estimation(cny, coor, displacement, face_to_elems);
 }
