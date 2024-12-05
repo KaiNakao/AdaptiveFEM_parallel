@@ -6,18 +6,23 @@
 void calc_rk(const std::vector<std::vector<int>> &cny, 
              const std::vector<std::vector<double>> &coor, 
              const std::vector<std::vector<double>> &displacement,
+             const std::vector<std::vector<double>> &material,
+             const std::vector<int> &matid_arr,
              std::vector<double> &rk_arr);
 
 void calc_re(const std::vector<std::vector<int>> &cny, 
              const std::vector<std::vector<double>> &coor, 
              const std::vector<std::vector<double>> &displacement,
+             const std::vector<std::vector<double>> &material,
+             const std::vector<int> &matid_arr,
              const std::map<std::set<int>, std::vector<int>> &face_to_elems,
              std::map<std::set<int>, double> &re_map);
 
 double calc_stress_jump(const std::vector<std::vector<int>> &cny, 
                         const std::vector<std::vector<double>> &coor, 
                         const std::vector<std::vector<double>> &displacement,
-                        const std::vector<std::vector<double>> &dmat,
+                        const std::vector<std::vector<double>> &material,
+                        const std::vector<int> &matid_arr,
                         const std::set<int> &face,
                         const std::vector<int> &elems, 
                         const std::map<std::vector<int>, std::vector<std::vector<double>>> &gauss_point_dict);
@@ -56,4 +61,7 @@ std::vector<std::vector<double>> calc_drdx(
 void posterior_error_estimation(const std::vector<std::vector<int>> &cny, 
                                 const std::vector<std::vector<double>> &coor,
                                 const std::vector<std::vector<double>> &displacement,
-                                const std::map<std::set<int>, std::vector<int>> &face_to_elems);
+                                const std::vector<std::vector<double>> &material,
+                                const std::vector<int> &matid_arr,
+                                const std::map<std::set<int>, std::vector<int>> &face_to_elems,
+                                std::vector<double> &eta_arr);

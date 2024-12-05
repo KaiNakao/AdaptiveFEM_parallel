@@ -7,26 +7,15 @@
 void calc_rk(const std::vector<std::vector<int>> &cny, 
              const std::vector<std::vector<double>> &coor, 
              const std::vector<std::vector<double>> &displacement,
+             const std::vector<std::vector<double>> &material,
+             const std::vector<int> &matid_arr,
              std::vector<double> &rk_arr) {
     rk_arr.resize(cny.size());
-    // 実際の物性への対応は未実装
-    double lam = 1.0, mu = 1.0;
-    std::vector<std::vector<double>> dmat(6, std::vector<double>(6));
-    for (int i = 0; i < 6; i++) {
-        for (int j = 0; j < 6; j++) {
-            dmat[i][j] = 0.0;
-        }
-    }
-    dmat[0][0] = 2.0 * mu + lam; dmat[0][1] = lam; dmat[0][2] = lam;
-    dmat[1][0] = lam; dmat[1][1] = 2.0 * mu + lam; dmat[1][2] = lam;
-    dmat[2][0] = lam; dmat[2][1] = lam; dmat[2][2] = 2.0 * mu + lam;
-    dmat[3][3] = mu; dmat[4][4] = mu; dmat[5][5] = mu;
 
     // dndrdr[i][j][k] = dn_i/(dr_j dr_k)
     std::vector<std::vector<std::vector<double>>> dndrdr = calc_dndrdr();
 
     for (int ielem = 0; ielem < cny.size(); ielem++) {
-        double eta = 0.0;
         std::vector<int> elem_id = cny[ielem];
         std::vector<std::vector<double>> xnode(10, std::vector<double>(3));
         std::vector<double> uvec(30);
@@ -37,6 +26,21 @@ void calc_rk(const std::vector<std::vector<int>> &cny,
             }
         }
 
+        int matid = matid_arr[ielem];
+        double lam = material[matid][0];
+        double mu = material[matid][1];
+        std::vector<std::vector<double>> dmat(6, std::vector<double>(6));
+        for (int i = 0; i < 6; i++) {
+            for (int j = 0; j < 6; j++) {
+                dmat[i][j] = 0.0;
+            }
+        }
+        dmat[0][0] = 2.0 * mu + lam; dmat[0][1] = lam; dmat[0][2] = lam;
+        dmat[1][0] = lam; dmat[1][1] = 2.0 * mu + lam; dmat[1][2] = lam;
+        dmat[2][0] = lam; dmat[2][1] = lam; dmat[2][2] = 2.0 * mu + lam;
+        dmat[3][3] = mu; dmat[4][4] = mu; dmat[5][5] = mu;
+
+
         // dxdr[i][j] = dx_i/dr_j
         std::vector<std::vector<double>> dxdr = calc_dxdr(xnode);
         // drdx[i][j] = dr_i/dx_j
@@ -45,9 +49,6 @@ void calc_rk(const std::vector<std::vector<int>> &cny,
         double vol = calc_volume(dxdr);
         // dndxdx[i][j][k] = dn_i/(dx_j dx_k)
         std::vector<std::vector<std::vector<double>>> dndxdx = calc_dndxdx(dndrdr, drdx);
-
-        // length of the longest edge
-        double hk = calc_hk(xnode);
 
         // internal residual
         std::vector<double> div_sigma(3);
@@ -117,32 +118,15 @@ void calc_rk(const std::vector<std::vector<int>> &cny,
 void calc_re(const std::vector<std::vector<int>> &cny, 
              const std::vector<std::vector<double>> &coor, 
              const std::vector<std::vector<double>> &displacement,
+             const std::vector<std::vector<double>> &material,
+             const std::vector<int> &matid_arr,
              const std::map<std::set<int>, std::vector<int>> &face_to_elems,
              std::map<std::set<int>, double> &re_map) {
-    // 実際の物性への対応は未実装
-    double lam = 1.0, mu = 1.0;
-    std::vector<std::vector<double>> dmat(6, std::vector<double>(6));
-    for (int i = 0; i < 6; i++) {
-        for (int j = 0; j < 6; j++) {
-            dmat[i][j] = 0.0;
-        }
-    }
-    dmat[0][0] = 2.0 * mu + lam; dmat[0][1] = lam; dmat[0][2] = lam;
-    dmat[1][0] = lam; dmat[1][1] = 2.0 * mu + lam; dmat[1][2] = lam;
-    dmat[2][0] = lam; dmat[2][1] = lam; dmat[2][2] = 2.0 * mu + lam;
-    dmat[3][3] = mu; dmat[4][4] = mu; dmat[5][5] = mu;
 
     std::map<std::vector<int>, std::vector<std::vector<double>>> gauss_point_dict = set_gauss_point_dict();
 
-    // std::cout << "nface: " << face_to_elems.size() << std::endl;
     for (const auto &p : face_to_elems) {
         std::set<int> face = p.first;
-        
-        // std::cout << "face: ";
-        // for (int inode : face) {
-        //     std::cout << inode << " ";
-        // }
-        // std::cout << std::endl;
 
         std::vector<int> elems = p.second;
         double re, beta;
@@ -152,7 +136,7 @@ void calc_re(const std::vector<std::vector<int>> &cny,
         }
         else {
             // stress jump
-            re = calc_stress_jump(cny, coor, displacement, dmat, face, elems, gauss_point_dict);
+            re = calc_stress_jump(cny, coor, displacement, material, matid_arr, face, elems, gauss_point_dict);
         }
         re_map[face] = re;
     }
@@ -161,7 +145,8 @@ void calc_re(const std::vector<std::vector<int>> &cny,
 double calc_stress_jump(const std::vector<std::vector<int>> &cny, 
                         const std::vector<std::vector<double>> &coor, 
                         const std::vector<std::vector<double>> &displacement,
-                        const std::vector<std::vector<double>> &dmat,
+                        const std::vector<std::vector<double>> &material,
+                        const std::vector<int> &matid_arr,
                         const std::set<int> &face,
                         const std::vector<int> &elems, 
                         const std::map<std::vector<int>, std::vector<std::vector<double>>> &gauss_point_dict) {
@@ -181,27 +166,9 @@ double calc_stress_jump(const std::vector<std::vector<int>> &cny,
                 }
             }
         }
-        // std::cout << "elem_id: " << elem_id << " inode_face_arr: ";
-        // for (int inode_face : inode_face_arr) {
-        //     std::cout << inode_face << " ";
-        // }
-        // std::cout << std::endl;
 
         // {r1, r2, r3, weight}
         std::vector<std::vector<double>> gauss_points = gauss_point_dict.at(inode_face_arr);
-
-        // std::cout << "inode_face_arr: ";
-        // for (int inode_face : inode_face_arr) {
-        //     std::cout << inode_face << " ";
-        // }
-        // std::cout << std::endl;
-        // for (int i = 0; i < 3; i++) {
-        //     for (int j = 0; j < 4; j++) {
-        //         std::cout << gauss_points[i][j] << " ";
-        //     }
-        //     std::cout << std::endl;
-        // }
-        // std::cout << "---------------" << std::endl;
 
         std::vector<std::vector<double>> xnode(10, std::vector<double>(3));
         std::vector<double> uvec(30);
@@ -212,6 +179,20 @@ double calc_stress_jump(const std::vector<std::vector<int>> &cny,
                 uvec[inode * 3 + idim] = displacement[node_id][idim];
             }
         }
+
+        int matid = matid_arr[elem_id];
+        double lam = material[matid][0];
+        double mu = material[matid][1];
+        std::vector<std::vector<double>> dmat(6, std::vector<double>(6));
+        for (int i = 0; i < 6; i++) {
+            for (int j = 0; j < 6; j++) {
+                dmat[i][j] = 0.0;
+            }
+        }
+        dmat[0][0] = 2.0 * mu + lam; dmat[0][1] = lam; dmat[0][2] = lam;
+        dmat[1][0] = lam; dmat[1][1] = 2.0 * mu + lam; dmat[1][2] = lam;
+        dmat[2][0] = lam; dmat[2][1] = lam; dmat[2][2] = 2.0 * mu + lam;
+        dmat[3][3] = mu; dmat[4][4] = mu; dmat[5][5] = mu;
 
         // dxdr[i][j] = dx_i/dr_j
         std::vector<std::vector<double>> dxdr = calc_dxdr(xnode);
@@ -225,27 +206,6 @@ double calc_stress_jump(const std::vector<std::vector<int>> &cny,
             double r3 = gauss_points[ipoint][2];
             double weight = gauss_points[ipoint][3];
             double l0 = 1.0 - r1 - r2 - r3, l1 = r1, l2 = r2, l3 = r3;
-
-            // std::vector<double> nvec(10);
-
-            // nvec[0] = l0 * (2.0 * l0 - 1.0); 
-            // nvec[1] = l1 * (2.0 * l1 - 1.0);
-            // nvec[2] = l2 * (2.0 * l2 - 1.0);
-            // nvec[3] = l3 * (2.0 * l3 - 1.0);
-            // nvec[4] = 4.0 * l0 * l1;
-            // nvec[5] = 4.0 * l1 * l2;
-            // nvec[6] = 4.0 * l2 * l0;
-            // nvec[7] = 4.0 * l0 * l3;
-            // nvec[8] = 4.0 * l1 * l3;
-            // nvec[9] = 4.0 * l2 * l3;
-
-            // std::vector<double> x(3);
-            // for (int inode = 0; inode < 10; inode++) {
-            //     for (int idim = 0; idim < 3; idim++) {
-            //         x[idim] += nvec[inode] * xnode[inode][idim];
-            //     }
-            // }
-            // std::cout << "x: " << x[0] << " " << x[1] << " " << x[2] << std::endl;
 
             std::vector<std::vector<double>> dndr = calc_dndr(l0, l1, l2, l3);
             std::vector<std::vector<double>> dndx = calc_dndx(drdx, dndr);
@@ -293,7 +253,6 @@ double calc_stress_jump(const std::vector<std::vector<int>> &cny,
         }
     }
     re *= area;
-    // std::cout << "re: " << re << std::endl;
     return re;
 }
 
@@ -589,11 +548,15 @@ std::vector<std::vector<double>> calc_drdx(
 void posterior_error_estimation(const std::vector<std::vector<int>> &cny, 
                                 const std::vector<std::vector<double>> &coor,
                                 const std::vector<std::vector<double>> &displacement,
-                                const std::map<std::set<int>, std::vector<int>> &face_to_elems) {
+                                const std::vector<std::vector<double>> &material,
+                                const std::vector<int> &matid_arr,
+                                const std::map<std::set<int>, std::vector<int>> &face_to_elems,
+                                std::vector<double> &eta_arr) {
+    eta_arr.resize(cny.size());
     std::vector<double> rk_arr;
     std::map<std::set<int>, double> re_map;
-    calc_rk(cny, coor, displacement, rk_arr);
-    calc_re(cny, coor, displacement, face_to_elems, re_map);
+    calc_rk(cny, coor, displacement, material, matid_arr, rk_arr);
+    calc_re(cny, coor, displacement, material, matid_arr, face_to_elems, re_map);
 
     for (int ielem = 0; ielem < cny.size(); ielem++) {
         double eta = 0.0;
@@ -624,6 +587,6 @@ void posterior_error_estimation(const std::vector<std::vector<int>> &cny,
         }
 
         eta = sqrt(eta);
-        std::cout << std::scientific << eta << std::endl;
+        eta_arr[ielem] = eta;
     }
 }
