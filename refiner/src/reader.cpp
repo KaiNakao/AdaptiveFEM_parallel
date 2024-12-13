@@ -73,7 +73,7 @@ void read_displacement(const std::string &data_dir,
 
     FILE *fp;
     // Read displacement
-    if ((fp = fopen((data_dir + "displacement.bin").c_str(), "r")) == NULL) {
+    if ((fp = fopen((data_dir + "displacement_quad.bin").c_str(), "r")) == NULL) {
         std::cerr << "Error: cannot open file displacement.bin" << std::endl;
         return;
     }
@@ -114,4 +114,16 @@ void read_material(const std::string &data_dir,
         }
         std::cout << std::endl;
     }   
+}
+
+void read_load_elem(const std::string &data_dir, 
+                    const int &nelem, 
+                    std::vector<int> &load_elem) {
+    FILE *fp;
+    if ((fp = fopen((data_dir + "load_elem.bin").c_str(), "r")) == NULL) {
+        std::cerr << "Error: cannot open file load_elem.bin" << std::endl;
+        return;
+    }
+    fread(&load_elem[0], sizeof(int), nelem, fp);
+    fclose(fp);
 }

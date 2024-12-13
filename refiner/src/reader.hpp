@@ -9,13 +9,13 @@ void read_mesh(const std::string &data_dir,
                std::vector<std::vector<double>> &coor,
                std::vector<int> &matid_arr);
 
-// void search_adj_element(const std::vector<std::vector<int>> &cny, 
-//                         const std::vector<std::vector<double>> &coor, 
-//                         std::vector<std::vector<int>> &adj_elem);
-
 void read_displacement(const std::string &data_dir, 
                        const int &nnode, 
                        std::vector<std::vector<double>> &displacement);
 
 void read_material(const std::string &data_dir, 
                    std::vector<std::vector<double>> &material);
+
+void read_load_elem(const std::string &data_dir, 
+                    const int &nelem, 
+                    std::vector<int> &load_elem);
