@@ -5,9 +5,10 @@
 
 void search_adj_element(const std::vector<std::vector<int>> &cny, 
                         const std::vector<std::vector<double>> &coor, 
-                        std::vector<std::vector<int>> &adj_elem) {
+                        std::vector<std::vector<int>> &adj_elem,
+                        std::map<std::set<int>, std::vector<int>> &face_to_elems) {
     
-    std::map<std::set<int>, std::vector<int>> face_to_elems;
+    // std::map<std::set<int>, std::vector<int>> face_to_elems;
     for (int ielem = 0; ielem < cny.size(); ielem++) {
         const std::vector<int> &elem = cny[ielem];
 
