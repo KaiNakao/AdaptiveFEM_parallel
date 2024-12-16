@@ -1,4 +1,5 @@
 #include "../inc/mesh_refiner.hpp"
+#include "../inc/adj_elem.hpp"
 
 Refiner::Refiner()
 {
@@ -10,15 +11,18 @@ Refiner::Refiner()
 Refiner::Refiner(const std::string &data_dir)
 {
     std::cout << " Reading shape..." << std::endl;
-    int num_elem, num_node_linear, num_node_quad, num_elem_marked;
-    read_shape(data_dir, num_elem, num_node_linear, num_node_quad, num_elem_marked);
+    int num_elem, num_node_linear, num_node_quad, num_material, num_elem_marked;
+    read_shape(data_dir, num_elem, num_node_linear, num_node_quad, num_material, num_elem_marked);
 
     std::cout << " Reading mesh..." << std::endl;
     std::vector<std::vector<int>> cny(num_elem, std::vector<int>(10));
     std::vector<std::vector<double>> coor(num_node_quad, std::vector<double>(3));
     std::vector<std::vector<int>> adj_elems(num_elem, std::vector<int>(4));
-    read_mesh(data_dir, num_elem, num_node_linear, cny, coor);
-    search_adj_element(cny, coor, adj_elems);
+    std::vector<int> matid_arr(num_elem);
+    std::map<std::set<int>, std::vector<int>> face_to_elems;
+    read_mesh(data_dir, num_elem, num_node_quad, cny, coor, matid_arr);
+    search_adj_element(cny, coor, adj_elems, face_to_elems);
+
     m_coordinates = coor;
     m_adj_elements = adj_elems;
     std::vector<std::vector<int>> connectivity_tmp(num_elem, std::vector<int>(4));
@@ -32,10 +36,10 @@ Refiner::Refiner(const std::string &data_dir)
     m_connectivity = connectivity_tmp;
 
 
-    std::cout << " Reading eta..." << std::endl;
-    std::vector<double> eta(num_elem, sizeof(double));
-    read_eta(data_dir, num_elem, eta);
-    m_error = eta;
+    // std::cout << " Reading eta..." << std::endl;
+    // std::vector<double> eta(num_elem, sizeof(double));
+    // read_eta(data_dir, num_elem, eta);
+    // m_error = eta;
 
     std::cout << " Reading marked elements..." << std::endl;
     std::vector<int> marked_elems(num_elem_marked, sizeof(int));
@@ -46,12 +50,11 @@ Refiner::Refiner(const std::string &data_dir)
 // MAIN ROUTINE for Refiner
 void Refiner::executeRefinement()
 {
-    int num_points_added = m_points.size();
-    for (int ipoint=0; ipoint<num_points_added; ++ipoint)
-    {
+    // int num_points_added = m_points.size();
+    // for (int ipoint=0; ipoint<num_points_added; ++ipoint)
+    // {
         
-    }
-
+    // }
 
     int num_elem_marked = m_marked_elems_id.size();
     for (int i=0; i<num_elem_marked; ++i)
@@ -101,7 +104,7 @@ void Refiner::addPoints(int _elem_id)
     std::vector<double> point;
     point = findInCenter(tetra);
     m_points.push_back(point);
-    // some another point adding scheme for interfae
+    // some another point adding scheme for interface
 }
 
 //--------------------------------------------//

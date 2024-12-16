@@ -5,7 +5,7 @@
 #include "reader.hpp"
 
 void read_shape(const std::string &data_dir, 
-                int &nelem, int &nnode_linear, int &nnode_quad, int &nmaterial) {
+                int &nelem, int &nnode_linear, int &nnode_quad, int &nmaterial, int &nelem_marked) {
 
     std::ifstream ifs(data_dir + "shape.dat");
     if (!ifs) {
@@ -22,11 +22,14 @@ void read_shape(const std::string &data_dir,
     ifs >> nnode_quad;
     ifs >> buf; // read "nmaterial"
     ifs >> nmaterial;
+    ifs >> buf; // read "nelem_marked"
+    ifs >> nelem_marked;
 
     std::cout << "nelem: " << nelem << std::endl;
     std::cout << "nnode_linear: " << nnode_linear << std::endl;
     std::cout << "nnode_quad: " << nnode_quad << std::endl;
     std::cout << "nmaterial: " << nmaterial << std::endl;
+    std::cout << "nelem_marked: " << nelem_marked << std::endl;
 }
 
 void read_mesh(const std::string &data_dir, 
@@ -125,5 +128,17 @@ void read_load_elem(const std::string &data_dir,
         return;
     }
     fread(&load_elem[0], sizeof(int), nelem, fp);
+    fclose(fp);
+}
+
+void read_marked_elem(const std::string &data_dir,
+                      const int &nelem_marked,
+                      std::vector<int> &marked_elem) {
+    FILE *fp;
+    if ((fp = fopen((data_dir + "marked_elem_quad.bin").c_str(), "r")) == NULL) {
+        std::cerr << "Error: cannot open file marked_elem_quad.bin" << std::endl;
+        return;
+    }
+    fread(&marked_elem[0], sizeof(int), nelem_marked, fp);
     fclose(fp);
 }

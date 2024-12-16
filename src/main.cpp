@@ -7,7 +7,7 @@
 
 int main() 
 {
-    std::string data_dir("data/analysis_result_iburi_large/");
+    std::string data_dir("/data6/itou/AFEM/data/analysis_result_iburi_large/");
 
     Refiner refiner = Refiner(data_dir);
     refiner.executeRefinement();
