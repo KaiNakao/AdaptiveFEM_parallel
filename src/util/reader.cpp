@@ -8,6 +8,7 @@ void read_shape(const std::string &data_dir,
                 int &nelem, int &nnode_linear, int &nnode_quad, int &nmaterial, int &nelem_marked) {
 
     std::ifstream ifs(data_dir + "shape.dat");
+    std::cout << "path: " << data_dir + "shape.dat" << std::endl;
     if (!ifs) {
         std::cerr << "Error: cannot open file shape.dat" << std::endl;
         return;
@@ -43,7 +44,7 @@ void read_mesh(const std::string &data_dir,
     FILE *fp;
     // Read cny
     if ((fp = fopen((data_dir + "cny_quad.bin").c_str(), "r")) == NULL) {
-        std::cerr << "Error: cannot open file mesh.dat" << std::endl;
+        std::cerr << "Error: cannot open file cny_quad.bin" << std::endl;
         return;
     }
     fread(&buf_cny[0], sizeof(int), 11 * nelem, fp);
@@ -57,7 +58,7 @@ void read_mesh(const std::string &data_dir,
 
     // Read coor
     if ((fp = fopen((data_dir + "coor_quad.bin").c_str(), "r")) == NULL) {
-        std::cerr << "Error: cannot open file mesh.dat" << std::endl;
+        std::cerr << "Error: cannot open file coor_quad.bin" << std::endl;
         return;
     }
     fread(&buf_coor[0], sizeof(double), 3 * nnode, fp);

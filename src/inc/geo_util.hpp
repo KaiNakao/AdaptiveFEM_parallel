@@ -26,6 +26,9 @@ double findformulaD(std::vector<std::vector<double>> &_verts);
 
 double findLength(std::vector<double> &_p1, std::vector<double> &_p2);
 
+std::vector<double> normalizeLocTetra(const std::vector<std::vector<double>> &_verts,
+                                      const std::vector<double> &_point);
+
 void outputAspectRatio(const std::string &data_dir,
      std::vector<int> &marked_elem, 
      std::vector<std::vector<int>> &cny, 
