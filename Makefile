@@ -1,8 +1,8 @@
 
 ####### Compiler, tools and options
 
-CXX           = g++
-CXXFLAGS      = -Wall -W
+CXX           = icpx
+CXXFLAGS      = -Wall -W -mcmodel=large -O3 -std=c++17 -qopenmp -mkl
 INCPATH       = -I./src/inc
 TAR           = tar -cf
 COMPRESS      = gzip -9f

@@ -15,7 +15,7 @@ double findTetraAspectRatio(std::vector<std::vector<double>> &_verts)
     l5 = findLength(_verts[2], _verts[3]);
     max_l = std::max({l0, l1, l2, l3, l4, l5});
 
-    std::cout << in_radius << " " << circum_radius << std::endl; 
+    // std::cout << in_radius << " " << circum_radius << std::endl; 
 
     //return max_l / (2*sqrt(6)*in_radius);
     return circum_radius/(3*in_radius);
@@ -230,6 +230,47 @@ double findLength(std::vector<double> &_p1, std::vector<double> &_p2)
                 + (_p1[2]-_p2[2])*(_p1[2]-_p2[2]));
     
     return length;
+}
+
+std::vector<double> normalizeLocTetra(const std::vector<std::vector<double>> &_verts,
+                                      const std::vector<double> &_point) {
+    double r1, r2, r3;
+    std::vector<std::vector<double>> dxdr(3, std::vector<double>(3));
+    dxdr[0][0] = _verts[1][0] - _verts[0][0];
+    dxdr[0][1] = _verts[2][0] - _verts[0][0];
+    dxdr[0][2] = _verts[3][0] - _verts[0][0];
+    dxdr[1][0] = _verts[1][1] - _verts[0][1];
+    dxdr[1][1] = _verts[2][1] - _verts[0][1];
+    dxdr[1][2] = _verts[3][1] - _verts[0][1];
+    dxdr[2][0] = _verts[1][2] - _verts[0][2];
+    dxdr[2][1] = _verts[2][2] - _verts[0][2];
+    dxdr[2][2] = _verts[3][2] - _verts[0][2];
+
+    double detj = dxdr[0][0]*(dxdr[1][1]*dxdr[2][2] - dxdr[1][2]*dxdr[2][1])
+                - dxdr[0][1]*(dxdr[1][0]*dxdr[2][2] - dxdr[1][2]*dxdr[2][0])
+                + dxdr[0][2]*(dxdr[1][0]*dxdr[2][1] - dxdr[1][1]*dxdr[2][0]);
+
+    std::vector<std::vector<double>> drdx(3, std::vector<double>(3));
+    drdx[0][0] = (dxdr[1][1]*dxdr[2][2] - dxdr[1][2]*dxdr[2][1])/detj;
+    drdx[0][1] = (dxdr[0][2]*dxdr[2][1] - dxdr[0][1]*dxdr[2][2])/detj;
+    drdx[0][2] = (dxdr[0][1]*dxdr[1][2] - dxdr[0][2]*dxdr[1][1])/detj;
+    drdx[1][0] = (dxdr[1][2]*dxdr[2][0] - dxdr[1][0]*dxdr[2][2])/detj;
+    drdx[1][1] = (dxdr[0][0]*dxdr[2][2] - dxdr[0][2]*dxdr[2][0])/detj;
+    drdx[1][2] = (dxdr[0][2]*dxdr[1][0] - dxdr[0][0]*dxdr[1][2])/detj;
+    drdx[2][0] = (dxdr[1][0]*dxdr[2][1] - dxdr[1][1]*dxdr[2][0])/detj;
+    drdx[2][1] = (dxdr[0][1]*dxdr[2][0] - dxdr[0][0]*dxdr[2][1])/detj;
+    drdx[2][2] = (dxdr[0][0]*dxdr[1][1] - dxdr[0][1]*dxdr[1][0])/detj;
+
+    std::vector<double> dx(3);
+    dx[0] = _point[0] - _verts[0][0];
+    dx[1] = _point[1] - _verts[0][1];
+    dx[2] = _point[2] - _verts[0][2];
+
+    r1 = drdx[0][0]*dx[0] + drdx[0][1]*dx[1] + drdx[0][2]*dx[2];
+    r2 = drdx[1][0]*dx[0] + drdx[1][1]*dx[1] + drdx[1][2]*dx[2];
+    r3 = drdx[2][0]*dx[0] + drdx[2][1]*dx[1] + drdx[2][2]*dx[2];
+
+    return {r1, r2, r3};
 }
 
 void outputAspectRatio(const std::string &data_dir,
