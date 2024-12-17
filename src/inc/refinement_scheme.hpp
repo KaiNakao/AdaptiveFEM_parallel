@@ -24,7 +24,7 @@ private: // private member function
     std::set<int> m_candidate_elems;
     std::map<std::set<int>, std::vector<int>> m_face_to_elems;
 
-    void split14(int _tetra_id, std::vector<double> &_pt);
+    void split14(int _tetra_id, std::vector<double> &_pt, std::set<int> &elems_for_flip);
     void performFlip(int _elem_id);
     bool checkFlippable(int _o_tetra_id);
     void flip23(int _o_tetra_id);

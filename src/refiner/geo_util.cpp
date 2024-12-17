@@ -301,3 +301,23 @@ void outputAspectRatio(const std::string &data_dir,
     }
     file.close();
 }
+
+double findTetraVolume(std::vector<std::vector<double>> &_verts)
+{
+    std::vector<std::vector<double>> dxdr(3, std::vector<double>(3));
+    dxdr[0][0] = _verts[1][0] - _verts[0][0];
+    dxdr[0][1] = _verts[2][0] - _verts[0][0];
+    dxdr[0][2] = _verts[3][0] - _verts[0][0];
+    dxdr[1][0] = _verts[1][1] - _verts[0][1];
+    dxdr[1][1] = _verts[2][1] - _verts[0][1];
+    dxdr[1][2] = _verts[3][1] - _verts[0][1];
+    dxdr[2][0] = _verts[1][2] - _verts[0][2];
+    dxdr[2][1] = _verts[2][2] - _verts[0][2];
+    dxdr[2][2] = _verts[3][2] - _verts[0][2];
+
+    double detj = dxdr[0][0]*(dxdr[1][1]*dxdr[2][2] - dxdr[1][2]*dxdr[2][1])
+                - dxdr[0][1]*(dxdr[1][0]*dxdr[2][2] - dxdr[1][2]*dxdr[2][0])
+                + dxdr[0][2]*(dxdr[1][0]*dxdr[2][1] - dxdr[1][1]*dxdr[2][0]);
+
+    return detj/6;
+}

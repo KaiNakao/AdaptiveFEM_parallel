@@ -17,15 +17,60 @@ Refinement_scheme::Refinement_scheme(const std::set<int> &elem_refine,
         m_coor_map[inode] = coordinates[inode];
     }
 
-    for (int elem_id : elem_refine) {
-        std::vector<std::vector<double>> tetra(4, std::vector<double>(3));
-        for (int inode = 0; inode < 4; inode++) {
-            tetra[inode] = m_coor_map[m_elems_in_mesh[elem_id][inode]];
+    std::map<std::set<int>, std::vector<int>> edge_to_elems;
+    std::set<std::set<int>> edge_refine;
+    for (const auto &elem : m_elems_in_mesh) {
+        int elem_id = elem.first;
+        std::vector<int> nodes = elem.second;
+        std::vector<std::vector<int>> edge_id;
+        edge_id = {{0, 1}, {1, 2}, {2, 0}, {0, 3}, {1, 3}, {2, 3}};
+        for (int iedge = 0; iedge < 6; iedge++) {
+            std::set<int> edge;
+            for (int inode = 0; inode < 2; inode++) {
+                edge.insert(nodes[edge_id[iedge][inode]]);
+            }
+            edge_to_elems[edge].push_back(elem_id);
+            if (elem_refine.count(elem_id)) {
+                edge_refine.insert(edge);
+            }
         }
-        std::vector<double> point = findInCenter(tetra);
-        m_points.push_back(point);
-        m_candidate_elems.insert(elem_id);
     }
+
+    for (const auto &edge : edge_refine) {
+        std::vector<double> mid_point(3);
+        for (int inode : edge) {
+            for (int idim = 0; idim < 3; idim++) {
+                mid_point[idim] += m_coor_map[inode][idim];
+            }
+        }
+        for (int idim = 0; idim < 3; idim++) {
+            mid_point[idim] /= 2.0;
+        }
+        m_points.push_back(mid_point);
+        for (int elem_id : edge_to_elems[edge]) {
+            m_candidate_elems.insert(elem_id);
+        }
+    }
+
+    // for (int node_id : m_elems_in_mesh[68498]) {
+    //     std::cout << node_id << std::endl;
+    // }
+    // std::exit(0);
+
+    // for (int elem_id : edge_to_elems[{13500, 13595}]) {
+    //     std::cout << elem_id << std::endl;
+    // }
+    // std::exit(0);
+
+    // for (int elem_id : elem_refine) {
+    //     std::vector<std::vector<double>> tetra(4, std::vector<double>(3));
+    //     for (int inode = 0; inode < 4; inode++) {
+    //         tetra[inode] = m_coor_map[m_elems_in_mesh[elem_id][inode]];
+    //     }
+    //     std::vector<double> point = findInCenter(tetra);
+    //     m_points.push_back(point);
+    //     m_candidate_elems.insert(elem_id);
+    // }
     // std::cout << "constructor end" << std::endl;
 
     m_face_to_elems = face_to_elems;
@@ -40,6 +85,13 @@ void Refinement_scheme::executeRefinement(std::vector<std::vector<int>> &new_con
     std::cout << "executeRefinement" << std::endl;
     std::cout << "m_points.size(): " << m_points.size() << std::endl;
     for (int ipoint = 0; ipoint < m_points.size(); ipoint++) {
+
+        std::cout << "add point: ";
+        for (int idim = 0; idim < 3; idim++) {
+            std::cout << m_points[ipoint][idim] << " ";
+        }
+        std::cout << std::endl;
+
         // find elements that contains the point
         std::vector<int> elems_containing_point;
         for (int ielem : m_candidate_elems) {
@@ -48,6 +100,7 @@ void Refinement_scheme::executeRefinement(std::vector<std::vector<int>> &new_con
                 tetra[inode] = m_coor_map[m_elems_in_mesh[ielem][inode]];
             }
             std::vector<double> r_loc = normalizeLocTetra(tetra, m_points[ipoint]);
+
             double r1 = r_loc[0], r2 = r_loc[1], r3 = r_loc[2];
             if (r1 >= -1e-8 && r2 >= -1e-8 && r3 >= -1e-8 && r1 + r2 + r3 <= 1.0 + 1e-8) {
                 elems_containing_point.push_back(ielem);
@@ -60,24 +113,40 @@ void Refinement_scheme::executeRefinement(std::vector<std::vector<int>> &new_con
             std::cout << "ERROR: No element contains the point" << std::endl;
             std::exit(1);
         }
-        if (elems_containing_point.size() > 1) {
-            std::cout << "ERROR: Multiple elements contain the point" << std::endl;
-            for (int ielem : elems_containing_point) {
-                std::cout << ielem << std::endl;
-                for (int inode = 0; inode < 4; inode++) {
-                    std::cout << m_elems_in_mesh[ielem][inode] << " ";
-                }
-                std::cout << std::endl;
-            }
-            std::exit(1);
+        // if (elems_containing_point.size() > 1) {
+        //     std::cout << "ERROR: Multiple elements contain the point" << std::endl;
+        //     for (int ielem : elems_containing_point) {
+        //         std::cout << ielem << std::endl;
+        //         for (int inode = 0; inode < 4; inode++) {
+        //             std::cout << m_elems_in_mesh[ielem][inode] << " ";
+        //         }
+        //         std::cout << std::endl;
+        //     }
+        //     std::exit(1);
+        // }
+
+        std::set<int> elems_for_flip;
+        for (int ielem = 0; ielem < elems_containing_point.size(); ielem++) {
+            int elem_id = elems_containing_point[ielem];
+            split14(elems_containing_point[ielem], m_points[ipoint], elems_for_flip);
         }
 
-        split14(elems_containing_point[0], m_points[ipoint]);
-
-        for (int ielem = 0; ielem < 4; ielem++) {
-            performFlip(m_max_elem_id - 3 + ielem);
+        // for (int ielem = 0; ielem < 4; ielem++) {
+        //     performFlip(m_max_elem_id - 3 + ielem);
+        // }
+        for (int elem_id : elems_for_flip) {
+            performFlip(elem_id);
         }
         std::cout << "number of elements: " << m_elems_in_mesh.size() << std::endl;
+    }
+
+    std::cout << "elem 177084" << std::endl;
+    for (int inode = 0; inode < 4; inode++) {
+        int node_id = m_elems_in_mesh[177084][inode];
+        for (int idim = 0; idim < 3; idim++) {
+            std::cout << m_coor_map[node_id][idim] << " ";
+        }
+        std::cout << std::endl;
     }
 
     // output result
@@ -94,15 +163,15 @@ void Refinement_scheme::executeRefinement(std::vector<std::vector<int>> &new_con
     std::sort(elem_tmp.begin(), elem_tmp.end());
     for (int ielem = 0; ielem < elem_tmp.size(); ielem++) {
         new_conn[ielem] = m_elems_in_mesh[elem_tmp[ielem]];
+        std::cout << "elem_id: " << elem_tmp[ielem] << " -> " << ielem << std::endl; 
     }
 }
 
 // split root element into 4 tetras
-void Refinement_scheme::split14(int _tetra_id, std::vector<double> &_pt)
+void Refinement_scheme::split14(int _tetra_id, std::vector<double> &_pt, std::set<int> &elems_for_flip)
 {
     // Store root tetra
     std::vector<int> simplex = m_elems_in_mesh[_tetra_id];
-    // //m_deleted_elems.push_back(_tetra_id);
 
     // Add new node
     int new_node_id = m_coor_map.size();
@@ -114,43 +183,95 @@ void Refinement_scheme::split14(int _tetra_id, std::vector<double> &_pt)
     t2 = {simplex[0], simplex[2], simplex[3], new_node_id};
     t3 = {simplex[0], simplex[3], simplex[1], new_node_id};
     t4 = {simplex[3], simplex[2], simplex[1], new_node_id};
-    int t1_id, t2_id, t3_id, t4_id;
-    t1_id = m_max_elem_id + 1;
-    t2_id = m_max_elem_id + 2;
-    t3_id = m_max_elem_id + 3;
-    t4_id = m_max_elem_id + 4;
-    m_max_elem_id += 4;
 
-    m_elems_in_mesh[t1_id] = t1;
-    m_elems_in_mesh[t2_id] = t2;
-    m_elems_in_mesh[t3_id] = t3;
-    m_elems_in_mesh[t4_id] = t4;
-    m_candidate_elems.insert(t1_id);
-    m_candidate_elems.insert(t2_id);
-    m_candidate_elems.insert(t3_id);
-    m_candidate_elems.insert(t4_id);
-    m_matid_map[t1_id] = m_matid_map[_tetra_id];
-    m_matid_map[t2_id] = m_matid_map[_tetra_id];
-    m_matid_map[t3_id] = m_matid_map[_tetra_id];
-    m_matid_map[t4_id] = m_matid_map[_tetra_id];
+    std::vector<std::vector<int>> t_arr;
+    std::vector<std::set<int>> faces_to_remove;
+    std::vector<int> t_id_arr;
+    std::vector<std::vector<int>> t_arr_all = {t1, t2, t3, t4};
+    std::vector<double> vol_arr_all(4);
+    for (int ielem = 0; ielem < 4; ielem++) {
+        std::vector<int> &t = t_arr_all[ielem];
+        std::vector<std::vector<double>> tetra(4, std::vector<double>(3));
+        for (int inode = 0; inode < 4; inode++) {
+            tetra[inode] = m_coor_map[t[inode]];
+        }
+        vol_arr_all[ielem] = findTetraVolume(tetra);
+    }
+    double mean_vol = 0.0;
+    for (double vol : vol_arr_all) {
+        mean_vol += vol;
+    }
+    mean_vol /= 4.0;
+
+    for (int ielem = 0; ielem < 4; ielem++) {
+        std::vector<int> &t = t_arr_all[ielem];
+        if (vol_arr_all[ielem]/mean_vol < 1e-8) {
+            faces_to_remove.push_back({t[0], t[1], t[2]});
+            continue;
+        }
+
+        int t_id = m_max_elem_id + 1;
+        m_elems_in_mesh[t_id] = t;
+        m_candidate_elems.insert(t_id);
+        m_matid_map[t_id] = m_matid_map[_tetra_id];
+        t_arr.push_back(t);
+        t_id_arr.push_back(t_id);
+        elems_for_flip.insert(t_id);
+
+        m_max_elem_id++;
+    }
+
+    // int t1_id, t2_id, t3_id, t4_id;
+    // t1_id = m_max_elem_id + 1;
+    // t2_id = m_max_elem_id + 2;
+    // t3_id = m_max_elem_id + 3;
+    // t4_id = m_max_elem_id + 4;
+    // m_max_elem_id += 4;
+
+    // m_elems_in_mesh[t1_id] = t1;
+    // m_elems_in_mesh[t2_id] = t2;
+    // m_elems_in_mesh[t3_id] = t3;
+    // m_elems_in_mesh[t4_id] = t4;
+    // m_candidate_elems.insert(t1_id);
+    // m_candidate_elems.insert(t2_id);
+    // m_candidate_elems.insert(t3_id);
+    // m_candidate_elems.insert(t4_id);
+    // m_matid_map[t1_id] = m_matid_map[_tetra_id];
+    // m_matid_map[t2_id] = m_matid_map[_tetra_id];
+    // m_matid_map[t3_id] = m_matid_map[_tetra_id];
+    // m_matid_map[t4_id] = m_matid_map[_tetra_id];
+
     // std::cout << t1_id << " " << t2_id << " " << t3_id << " " << t4_id << " are generated" << std::endl;
-    std::cout << "split: " << _tetra_id << " -> " << t1_id << " " << t2_id << " " << t3_id << " " << t4_id << std::endl;
+    std::cout << "split: " << _tetra_id << " -> ";
+    for (int i = 0; i < t_arr.size(); i++) {
+        std::cout << t_id_arr[i] << " ";
+    }
+    std::cout << std::endl;
+    //  << t1_id << " " << t2_id << " " << t3_id << " " << t4_id << std::endl;
 
     // update face_to_elems
-    std::vector<std::set<int>> face_arr;
-    face_arr.push_back({simplex[0], simplex[1], simplex[2]});
-    face_arr.push_back({simplex[0], simplex[2], simplex[3]});
-    face_arr.push_back({simplex[0], simplex[3], simplex[1]});
-    face_arr.push_back({simplex[1], simplex[2], simplex[3]});
-    for (int iface = 0; iface < 4; iface++) {
-        std::set<int> &face = face_arr[iface];
+    // std::vector<std::set<int>> face_arr;
+    // face_arr.push_back({simplex[0], simplex[1], simplex[2]});
+    // face_arr.push_back({simplex[0], simplex[2], simplex[3]});
+    // face_arr.push_back({simplex[0], simplex[3], simplex[1]});
+    // face_arr.push_back({simplex[1], simplex[2], simplex[3]});
+    // for (int iface = 0; iface < 4; iface++) {
+    //     std::set<int> &face = face_arr[iface];
+    //     std::vector<int> &elems = m_face_to_elems[face];
+    //     elems.erase(std::remove(elems.begin(), elems.end(), _tetra_id), elems.end());
+    // }
+    for (const auto &t : t_arr) {
+        std::set<int> face = {t[0], t[1], t[2]};
         std::vector<int> &elems = m_face_to_elems[face];
         elems.erase(std::remove(elems.begin(), elems.end(), _tetra_id), elems.end());
     }
+    for (const auto &face : faces_to_remove) {
+        m_face_to_elems.erase(face);
+    }
 
-    std::vector<int> id_arr = {t1_id, t2_id, t3_id, t4_id};
-    for (int ielem = 0; ielem < id_arr.size(); ielem++) {
-        int elem_id = id_arr[ielem];
+    // std::vector<int> id_arr = {t1_id, t2_id, t3_id, t4_id};
+    for (int ielem = 0; ielem < t_id_arr.size(); ielem++) {
+        int elem_id = t_id_arr[ielem];
         std::vector<int> &elem = m_elems_in_mesh[elem_id];
         for (int iface = 0; iface < 4; iface++) {
             std::set<int> face;
