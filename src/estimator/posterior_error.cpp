@@ -1,15 +1,96 @@
 #include <cmath>
 #include <algorithm>
 #include <iostream>
+#include <fstream>
 
 #include "posterior_error.hpp"
+#include "reader.hpp"
+#include "adj_elem.hpp"
+#include "mark_elem.hpp"
 
-void calc_rk(const std::vector<std::vector<int>> &cny, 
-             const std::vector<std::vector<double>> &coor, 
-             const std::vector<std::vector<double>> &displacement,
-             const std::vector<std::vector<double>> &material,
-             const std::vector<int> &matid_arr,
-             std::vector<double> &rk_arr) {
+ErrorEstimator::ErrorEstimator(const std::string &data_dir) {
+
+    int nelem, nnode_linear, nnode_quad, nmaterial, dummy;
+    read_shape(data_dir, nelem, nnode_linear, nnode_quad, nmaterial, dummy);
+
+    std::vector<std::vector<int>> cny(nelem, std::vector<int>(10));
+    std::vector<int> matid_arr(nelem);
+    std::vector<std::vector<double>> coor(nnode_quad, std::vector<double>(3));
+    std::vector<std::vector<double>> displacement(nnode_quad, std::vector<double>(3));
+    std::vector<int> load_elem(nelem);
+    read_mesh(data_dir, nelem, nnode_quad, cny, coor, matid_arr);
+    read_displacement(data_dir, nnode_quad, displacement);
+    read_load_elem(data_dir, nelem, load_elem);
+
+    for (int ielem = 0; ielem < nelem; ielem++) {
+        if (load_elem[ielem] == 1) {
+            std::cout << "load_elem: " << ielem << std::endl;
+        }
+    }
+
+    std::vector<std::vector<double>> material(nmaterial, std::vector<double>(2));
+    read_material(data_dir, material);
+
+    std::vector<std::vector<int>> adj_elem(nelem, std::vector<int>(4));
+    std::map<std::set<int>, std::vector<int>> face_to_elems;
+    search_adj_element(cny, coor, adj_elem, face_to_elems);
+
+    std::vector<double> eta_arr;
+    posterior_error_estimation(cny, coor, displacement, material, matid_arr, face_to_elems, eta_arr);
+
+    std::vector<int> marked_elem;
+    // mark_elem_to_refine(eta_arr, marked_elem);
+    mark_elem_to_refine(eta_arr, load_elem, marked_elem, 0.1);
+    int nelem_marked = marked_elem.size();
+    for (int ielem = 0; ielem < nelem_marked; ielem++) {
+        std::cout << "marked_elem: " << marked_elem[ielem] << " " << eta_arr[marked_elem[ielem]] << std::endl;
+    }
+
+    FILE *fp;
+    if ((fp = fopen((data_dir + "eta_quad.bin").c_str(), "w")) == NULL) {
+        std::cerr << "Error: cannot open file eta_quad.bin" << std::endl;
+        std::exit(1);
+    }
+    fwrite(&eta_arr[0], sizeof(double), nelem, fp);
+    fclose(fp);
+
+    if ((fp = fopen((data_dir + "marked_elem_quad.bin").c_str(), "w")) == NULL) {
+        std::cerr << "Error: cannot open file marked_elem_quad.bin" << std::endl;
+        std::exit(1);
+    }
+    for (int ielem = 0; ielem < nelem_marked; ielem++) {
+        marked_elem[ielem] += 1;
+    }
+    fwrite(&marked_elem[0], sizeof(int), nelem_marked, fp);
+    fclose(fp);
+
+    std::ofstream ofs(data_dir + "shape.dat");
+    if (!ofs) {
+        std::cerr << "Error: cannot open file shape.dat" << std::endl;
+        std::exit(1);
+    }
+    ofs << "nelem" << std::endl;
+    ofs << nelem << std::endl;
+    ofs << "nnode_linear" << std::endl;
+    ofs << nnode_linear << std::endl;
+    ofs << "nnode_quad" << std::endl;
+    ofs << nnode_quad << std::endl;
+    ofs << "nmaterial" << std::endl;
+    ofs << nmaterial << std::endl;
+    ofs << "nelem_marked" << std::endl;
+    ofs << nelem_marked << std::endl;
+    ofs.close();
+}
+
+ErrorEstimator::~ErrorEstimator() {
+}
+
+void ErrorEstimator::calc_rk(const std::vector<std::vector<int>> &cny, 
+                             const std::vector<std::vector<double>> &coor, 
+                             const std::vector<std::vector<double>> &displacement,
+                             const std::vector<std::vector<double>> &material,
+                             const std::vector<int> &matid_arr,
+                             std::vector<double> &rk_arr) {
     rk_arr.resize(cny.size());
 
     // dndrdr[i][j][k] = dn_i/(dr_j dr_k)
@@ -115,13 +196,13 @@ void calc_rk(const std::vector<std::vector<int>> &cny,
     }
 }
 
-void calc_re(const std::vector<std::vector<int>> &cny, 
-             const std::vector<std::vector<double>> &coor, 
-             const std::vector<std::vector<double>> &displacement,
-             const std::vector<std::vector<double>> &material,
-             const std::vector<int> &matid_arr,
-             const std::map<std::set<int>, std::vector<int>> &face_to_elems,
-             std::map<std::set<int>, double> &re_map) {
+void ErrorEstimator::calc_re(const std::vector<std::vector<int>> &cny, 
+                             const std::vector<std::vector<double>> &coor, 
+                             const std::vector<std::vector<double>> &displacement,
+                             const std::vector<std::vector<double>> &material,
+                             const std::vector<int> &matid_arr,
+                             const std::map<std::set<int>, std::vector<int>> &face_to_elems,
+                             std::map<std::set<int>, double> &re_map) {
 
     std::map<std::vector<int>, std::vector<std::vector<double>>> gauss_point_dict = set_gauss_point_dict();
 
@@ -142,14 +223,14 @@ void calc_re(const std::vector<std::vector<int>> &cny,
     }
 }
 
-double calc_stress_jump(const std::vector<std::vector<int>> &cny, 
-                        const std::vector<std::vector<double>> &coor, 
-                        const std::vector<std::vector<double>> &displacement,
-                        const std::vector<std::vector<double>> &material,
-                        const std::vector<int> &matid_arr,
-                        const std::set<int> &face,
-                        const std::vector<int> &elems, 
-                        const std::map<std::vector<int>, std::vector<std::vector<double>>> &gauss_point_dict) {
+double ErrorEstimator::calc_stress_jump(const std::vector<std::vector<int>> &cny, 
+                                        const std::vector<std::vector<double>> &coor, 
+                                        const std::vector<std::vector<double>> &displacement,
+                                        const std::vector<std::vector<double>> &material,
+                                        const std::vector<int> &matid_arr,
+                                        const std::set<int> &face,
+                                        const std::vector<int> &elems, 
+                                        const std::map<std::vector<int>, std::vector<std::vector<double>>> &gauss_point_dict) {
 
     std::vector<std::vector<std::vector<double>>> gauss_tractions(2, std::vector<std::vector<double>>(3, std::vector<double>(3)));
 
@@ -256,7 +337,7 @@ double calc_stress_jump(const std::vector<std::vector<int>> &cny,
     return re;
 }
 
-std::vector<std::vector<double>> calc_dndr(double l0, double l1, double l2, double l3) {
+std::vector<std::vector<double>> ErrorEstimator::calc_dndr(double l0, double l1, double l2, double l3) {
     std::vector<std::vector<double>> dndr(10, std::vector<double>(3));
     dndr[0] = {1.0 - 4.0 * l0, 1.0 - 4.0 * l0, 1.0 - 4.0 * l0};
     dndr[1] = {-1.0 + 4.0 * l0, 0.0, 0.0};
@@ -271,8 +352,8 @@ std::vector<std::vector<double>> calc_dndr(double l0, double l1, double l2, doub
     return dndr;
 }
 
-std::vector<std::vector<double>> calc_dndx(const std::vector<std::vector<double>> &drdx, 
-                                           const std::vector<std::vector<double>> &dndr) {
+std::vector<std::vector<double>> ErrorEstimator::calc_dndx(const std::vector<std::vector<double>> &drdx, 
+                                                           const std::vector<std::vector<double>> &dndr) {
     std::vector<std::vector<double>> dndx(10, std::vector<double>(3));
     for (int inode = 0; inode < 10; inode++) {
         for (int ix = 0; ix < 3; ix++) {
@@ -285,7 +366,7 @@ std::vector<std::vector<double>> calc_dndx(const std::vector<std::vector<double>
     return dndx;
 }
 
-std::map<std::vector<int>, std::vector<std::vector<double>>> set_gauss_point_dict() {
+std::map<std::vector<int>, std::vector<std::vector<double>>> ErrorEstimator::set_gauss_point_dict() {
     std::map<std::vector<int>, std::vector<std::vector<double>>> gauss_point_dict;
     std::map<int, std::vector<double>> node_to_point;
     // plane r3 = 0
@@ -339,7 +420,7 @@ std::map<std::vector<int>, std::vector<std::vector<double>>> set_gauss_point_dic
     return gauss_point_dict;
 }
 
-double calc_hk(const std::vector<std::vector<double>> &xnode) {
+double ErrorEstimator::calc_hk(const std::vector<std::vector<double>> &xnode) {
 
     // length of each edge
     std::vector<double> edge_length(6);
@@ -373,8 +454,8 @@ double calc_hk(const std::vector<std::vector<double>> &xnode) {
     return hk;
 }
 
-std::vector<double> calc_normal_vec(const std::vector<std::vector<double>> &coor, 
-                                    const std::set<int> &face) {
+std::vector<double> ErrorEstimator::calc_normal_vec(const std::vector<std::vector<double>> &coor, 
+                                                    const std::set<int> &face) {
     std::vector<int> node_id_arr(face.begin(), face.end());
     std::vector<double> normal_vec(3);
     std::vector<double> vec1(3), vec2(3);
@@ -393,8 +474,8 @@ std::vector<double> calc_normal_vec(const std::vector<std::vector<double>> &coor
     return normal_vec;
 }
 
-double calc_area(const std::vector<std::vector<double>> &coor, 
-                 const std::set<int> &face) {
+double ErrorEstimator::calc_area(const std::vector<std::vector<double>> &coor, 
+                                 const std::set<int> &face) {
     std::vector<int> node_id_arr(face.begin(), face.end());
     std::vector<double> vec1(3), vec2(3);
     for (int idim = 0; idim < 3; idim++) {
@@ -409,8 +490,8 @@ double calc_area(const std::vector<std::vector<double>> &coor,
     return area;
 }
 
-double calc_he(const std::vector<std::vector<double>> &coor,
-               const std::set<int> &face) {
+double ErrorEstimator::calc_he(const std::vector<std::vector<double>> &coor,
+                               const std::set<int> &face) {
     std::vector<int> node_id_arr(face.begin(), face.end());
     // length of each edge
     std::vector<double> edge_length(3);
@@ -436,7 +517,7 @@ double calc_he(const std::vector<std::vector<double>> &coor,
     return he;
 }
 
-std::vector<std::vector<std::vector<double>>> calc_dndrdr() {
+std::vector<std::vector<std::vector<double>>> ErrorEstimator::calc_dndrdr() {
     std::vector<std::vector<std::vector<double>>> 
     dndrdr(10, std::vector<std::vector<double>>(3, std::vector<double>(3)));
 
@@ -483,7 +564,7 @@ std::vector<std::vector<std::vector<double>>> calc_dndrdr() {
     return dndrdr;
 }
 
-std::vector<std::vector<double>> calc_dxdr(const std::vector<std::vector<double>> &xnode) {
+std::vector<std::vector<double>> ErrorEstimator::calc_dxdr(const std::vector<std::vector<double>> &xnode) {
     std::vector<std::vector<double>> dxdr(3, std::vector<double>(3));
     double x1 = xnode[0][0], y1 = xnode[0][1], z1 = xnode[0][2];
     double x2 = xnode[1][0], y2 = xnode[1][1], z2 = xnode[1][2];
@@ -501,7 +582,7 @@ std::vector<std::vector<double>> calc_dxdr(const std::vector<std::vector<double>
     return dxdr;
 }
 
-std::vector<std::vector<std::vector<double>>> calc_dndxdx(
+std::vector<std::vector<std::vector<double>>> ErrorEstimator::calc_dndxdx(
     const std::vector<std::vector<std::vector<double>>> &dndrdr, 
     const std::vector<std::vector<double>> &drdx) {
     std::vector<std::vector<std::vector<double>>> dndxdx(10, std::vector<std::vector<double>>(3, std::vector<double>(3)));
@@ -521,15 +602,14 @@ std::vector<std::vector<std::vector<double>>> calc_dndxdx(
     return dndxdx;
 }
 
-double calc_volume(std::vector<std::vector<double>> &dxdr) {
+double ErrorEstimator::calc_volume(std::vector<std::vector<double>> &dxdr) {
     double detj = dxdr[0][0] * dxdr[1][1] * dxdr[2][2] + dxdr[1][0] * dxdr[2][1] * dxdr[0][2] + dxdr[2][0] * dxdr[0][1] * dxdr[1][2]
                - dxdr[0][0] * dxdr[2][1] * dxdr[1][2] - dxdr[1][0] * dxdr[0][1] * dxdr[2][2] - dxdr[2][0] * dxdr[1][1] * dxdr[0][2];
     double vol = detj / 6.0;
     return vol;
 }
 
-std::vector<std::vector<double>> calc_drdx(
-    const std::vector<std::vector<double>> &dxdr) {
+std::vector<std::vector<double>> ErrorEstimator::calc_drdx(const std::vector<std::vector<double>> &dxdr) {
     std::vector<std::vector<double>> drdx(3, std::vector<double>(3));
     double detj = dxdr[0][0] * dxdr[1][1] * dxdr[2][2] + dxdr[1][0] * dxdr[2][1] * dxdr[0][2] + dxdr[2][0] * dxdr[0][1] * dxdr[1][2]
                - dxdr[0][0] * dxdr[2][1] * dxdr[1][2] - dxdr[1][0] * dxdr[0][1] * dxdr[2][2] - dxdr[2][0] * dxdr[1][1] * dxdr[0][2];
@@ -545,13 +625,13 @@ std::vector<std::vector<double>> calc_drdx(
     return drdx;
 }
 
-void posterior_error_estimation(const std::vector<std::vector<int>> &cny, 
-                                const std::vector<std::vector<double>> &coor,
-                                const std::vector<std::vector<double>> &displacement,
-                                const std::vector<std::vector<double>> &material,
-                                const std::vector<int> &matid_arr,
-                                const std::map<std::set<int>, std::vector<int>> &face_to_elems,
-                                std::vector<double> &eta_arr) {
+void ErrorEstimator::posterior_error_estimation(const std::vector<std::vector<int>> &cny, 
+                                                const std::vector<std::vector<double>> &coor,
+                                                const std::vector<std::vector<double>> &displacement,
+                                                const std::vector<std::vector<double>> &material,
+                                                const std::vector<int> &matid_arr,
+                                                const std::map<std::set<int>, std::vector<int>> &face_to_elems,
+                                                std::vector<double> &eta_arr) {
     eta_arr.resize(cny.size());
     std::vector<double> rk_arr;
     std::map<std::set<int>, double> re_map;
