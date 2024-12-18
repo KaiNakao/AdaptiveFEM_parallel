@@ -15,8 +15,7 @@ class SmoothingScheme
 public: // public member function
     SmoothingScheme(const std::set<int> &elem_smooth,
                     std::vector<std::vector<int>> &connectivity,
-                    std::vector<std::vector<double>> &coordinates,
-                    std::map<std::set<int>, std::vector<int>> &face_to_elems);
+                    std::vector<std::vector<double>> &coordinates);
     ~SmoothingScheme();
 
     void executeSmoothing(std::vector<std::vector<int>> &new_conn, 

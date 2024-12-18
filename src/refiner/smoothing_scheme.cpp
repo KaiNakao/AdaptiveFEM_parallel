@@ -2,18 +2,21 @@
 
 SmoothingScheme::SmoothingScheme(const std::set<int> &elem_smooth,
                                  std::vector<std::vector<int>> &connectivity,
-                                 std::vector<std::vector<double>> &coordinates,
-                                 std::map<std::set<int>, std::vector<int>> &face_to_elems)
+                                 std::vector<std::vector<double>> &coordinates)
 {
+    std::cout << "smoothing constructor" << std::endl;
+    std::vector<std::vector<int>> connectivity_tmp(connectivity.size(), std::vector<int>(4));
+    std::vector<std::vector<double>> coordinates_tmp(coordinates.size(), std::vector<double>(3));
     for (int ielem = 0; ielem < connectivity.size(); ielem++) 
     {
-        m_connectivity[ielem] = connectivity[ielem];
+        connectivity_tmp[ielem] = connectivity[ielem];
     }
     for (int inode = 0; inode < coordinates.size(); inode++) 
     {
-        m_coordinates[inode] = coordinates[inode];
+        coordinates_tmp[inode] = coordinates[inode];
     }
-
+    m_connectivity = connectivity_tmp;
+    m_coordinates = coordinates_tmp;
     for (int elem_id : elem_smooth) {
         m_elem_smooth.push_back(elem_id);
     }
@@ -28,6 +31,7 @@ SmoothingScheme::~SmoothingScheme()
 void SmoothingScheme::executeSmoothing(std::vector<std::vector<int>> &new_conn, 
                                        std::vector<std::vector<double>> &new_coor)
 {
+    std::cout << "executing smoothing" << std::endl;
     int max_iter = 200;
     search_adj_nodes();
     fetchNodes();
@@ -35,18 +39,18 @@ void SmoothingScheme::executeSmoothing(std::vector<std::vector<int>> &new_conn,
     for (int iter=0; iter<max_iter; ++iter)
     {
         moveNodes();
-        //double max_aspect_ratio = findMaxAspectRatio();
-        //std::cout <<"max_aspect_ratio" << max_aspect_ratio << std::endl;
-        //if (prev_aspect_ratio<max_aspect_ratio)
-        //{
-        //    break;
-        //}
-        //prev_aspect_ratio = max_aspect_ratio;
-        bool comp = compareMaxAspectRatio();
-        if (!comp)
+        double max_aspect_ratio = findMaxAspectRatio();
+        std::cout <<"max_aspect_ratio" << max_aspect_ratio << std::endl;
+        if (prev_aspect_ratio<max_aspect_ratio)
         {
             break;
         }
+        prev_aspect_ratio = max_aspect_ratio;
+        //bool comp = compareMaxAspectRatio();
+        //if (!comp)
+        //{
+        //    break;
+        //}
     }
 
     // output result
@@ -206,7 +210,7 @@ bool SmoothingScheme::compareMaxAspectRatio()
     }
 
     std::cout << max_aspect_ratio << " " << external_max_aspect_ratio << std::endl;
-    if (max_aspect_ratio < external_max_aspect_ratio)
+    if (max_aspect_ratio > external_max_aspect_ratio)
     {
         return false;
     }
