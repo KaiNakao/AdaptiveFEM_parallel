@@ -99,6 +99,19 @@ void Refiner::executeRefinement()
     std::vector<int> new_matid_arr;
     refinement_scheme.executeRefinement(new_connectivity, new_coordinates, new_matid_arr);
 
+    std::vector<double> volume_arr;
+    for (int ielem = 0; ielem < new_connectivity.size(); ielem++)
+    {
+        std::vector<std::vector<double>> tetra(4, std::vector<double>(3));
+        for (int i=0; i<4; ++i)
+        {
+            tetra[i] = new_coordinates[new_connectivity[ielem][i]];
+        }
+        double volume = findTetraVolume(tetra);
+        volume_arr.push_back(volume);
+    }
+    std::cout << "minimum volume: " << *std::min_element(volume_arr.begin(), volume_arr.end()) << std::endl;
+
     // output new mesh
     std::ofstream ofs;
     ofs.open(m_data_dir + "new_coordinates.bin", std::ios::binary);
