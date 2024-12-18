@@ -11,17 +11,21 @@ Refiner::Refiner()
 Refiner::Refiner(const std::string &data_dir)
 {
     std::cout << " Reading shape..." << std::endl;
-    int num_elem, num_node_linear, num_node_quad, num_elem_marked;
-    read_shape(data_dir, num_elem, num_node_linear, num_node_quad, num_elem_marked);
+    int num_elem, num_node_linear, num_node_quad, num_material, num_elem_marked;
+    read_shape(data_dir, num_elem, num_node_linear, num_node_quad, num_material, num_elem_marked);
 
     std::cout << " Reading mesh..." << std::endl;
     std::vector<std::vector<int>> cny(num_elem, std::vector<int>(10));
     std::vector<std::vector<double>> coor(num_node_quad, std::vector<double>(3));
     std::vector<std::vector<int>> adj_elems(num_elem, std::vector<int>(4));
-    read_mesh(data_dir, num_elem, num_node_linear, cny, coor);
-    search_adj_element(cny, coor, adj_elems);
+    std::vector<int> matid_arr(num_elem);
+    std::map<std::set<int>, std::vector<int>> face_to_elems;
+    read_mesh(data_dir, num_elem, num_node_quad, cny, coor, matid_arr);
+    search_adj_element(cny, coor, adj_elems, face_to_elems);
+    m_face_to_elems = face_to_elems;
     m_coordinates = coor;
     m_adj_elements = adj_elems;
+    m_matid_arr = matid_arr;
     std::vector<std::vector<int>> connectivity_tmp(num_elem, std::vector<int>(4));
     std::vector<int> elem_to_scheme(num_elem);
     for (int ielem=0; ielem<num_elem; ++ielem)
@@ -34,12 +38,6 @@ Refiner::Refiner(const std::string &data_dir)
     }
     m_connectivity = connectivity_tmp;
     m_elem_to_scheme = elem_to_scheme;
-
-
-    std::cout << " Reading eta..." << std::endl;
-    std::vector<double> eta(num_elem, sizeof(double));
-    read_eta(data_dir, num_elem, eta);
-    m_error = eta;
 
     std::cout << " Reading marked elements..." << std::endl;
     std::vector<int> marked_elems(num_elem_marked, sizeof(int));
@@ -93,6 +91,40 @@ void Refiner::executeRefinement()
     SmoothingScheme smoothing(m_elem_smooth, m_connectivity, m_coordinates);
     smoothing.executeSmoothing(m_connectivity, m_coordinates);
     // 2. DO mesh refinement
+    Refinement_scheme refinement_scheme = Refinement_scheme(m_elem_refine, m_connectivity, 
+                                                            m_coordinates, m_matid_arr, 
+                                                            m_face_to_elems);
+    std::vector<std::vector<int>> new_connectivity;
+    std::vector<std::vector<double>> new_coordinates;
+    std::vector<int> new_matid_arr;
+    refinement_scheme.executeRefinement(new_connectivity, new_coordinates, new_matid_arr);
+
+    // output new mesh
+    std::ofstream ofs;
+    ofs.open(m_data_dir + "new_coordinates.bin", std::ios::binary);
+    if (!ofs) {
+        std::cerr << "Error opening file for new_coordinates" << std::endl;
+        return;
+    }
+    for (int inode = 0; inode < new_coordinates.size(); inode++) {
+        ofs.write(reinterpret_cast<const char*>(new_coordinates[inode].data()), 3 * sizeof(double));
+    }
+    ofs.close();
+
+    ofs.open(m_data_dir + "new_connectivity.bin", std::ios::binary);
+    if (!ofs) {
+        std::cerr << "Error opening file for new_connectivity" << std::endl;
+        return;
+    }
+    for (int ielem = 0; ielem < new_connectivity.size(); ielem++) {
+        for (int inode = 0; inode < 4; inode++) {
+            new_connectivity[ielem][inode] += 1;
+        }
+        new_matid_arr[ielem] += 1;
+        ofs.write(reinterpret_cast<const char*>(new_connectivity[ielem].data()), 4 * sizeof(int));
+        ofs.write(reinterpret_cast<const char*>(&new_matid_arr[ielem]), sizeof(int));
+    }
+    ofs.close();
 }
 
 int Refiner::switchScheme(int _elem_id)
