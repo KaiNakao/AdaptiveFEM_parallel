@@ -234,6 +234,16 @@ double findLength(std::vector<double> &_p1, std::vector<double> &_p2)
 
 std::vector<double> normalizeLocTetra(const std::vector<std::vector<double>> &_verts,
                                       const std::vector<double> &_point) {
+    // std::cout << "normalizeLocTetra" << std::endl;
+    // std::cout << "_verts:" << std::endl;
+    // for (int i=0; i<4; ++i) {
+    //     for (int j=0; j<3; ++j) {
+    //         std::cout << _verts[i][j] << " ";
+    //     }
+    //     std::cout << std::endl;
+    // }
+    // std::cout << "_point: " << std::endl << _point[0] << " " << _point[1] << " " << _point[2] << std::endl;
+
     double r1, r2, r3;
     std::vector<std::vector<double>> dxdr(3, std::vector<double>(3));
     dxdr[0][0] = _verts[1][0] - _verts[0][0];
@@ -245,10 +255,18 @@ std::vector<double> normalizeLocTetra(const std::vector<std::vector<double>> &_v
     dxdr[2][0] = _verts[1][2] - _verts[0][2];
     dxdr[2][1] = _verts[2][2] - _verts[0][2];
     dxdr[2][2] = _verts[3][2] - _verts[0][2];
+    // std::cout << "dxdr: " << std::endl;
+    // for (int i=0; i<3; ++i) {
+    //     for (int j=0; j<3; ++j) {
+    //         std::cout << dxdr[i][j] << " ";
+    //     }
+    //     std::cout << std::endl;
+    // }
 
     double detj = dxdr[0][0]*(dxdr[1][1]*dxdr[2][2] - dxdr[1][2]*dxdr[2][1])
                 - dxdr[0][1]*(dxdr[1][0]*dxdr[2][2] - dxdr[1][2]*dxdr[2][0])
                 + dxdr[0][2]*(dxdr[1][0]*dxdr[2][1] - dxdr[1][1]*dxdr[2][0]);
+    // std::cout << "detj: " << detj << std::endl;
 
     std::vector<std::vector<double>> drdx(3, std::vector<double>(3));
     drdx[0][0] = (dxdr[1][1]*dxdr[2][2] - dxdr[1][2]*dxdr[2][1])/detj;
@@ -260,15 +278,24 @@ std::vector<double> normalizeLocTetra(const std::vector<std::vector<double>> &_v
     drdx[2][0] = (dxdr[1][0]*dxdr[2][1] - dxdr[1][1]*dxdr[2][0])/detj;
     drdx[2][1] = (dxdr[0][1]*dxdr[2][0] - dxdr[0][0]*dxdr[2][1])/detj;
     drdx[2][2] = (dxdr[0][0]*dxdr[1][1] - dxdr[0][1]*dxdr[1][0])/detj;
+    // std::cout << "drdx: " << std::endl;
+    // for (int i=0; i<3; ++i) {
+    //     for (int j=0; j<3; ++j) {
+    //         std::cout << drdx[i][j] << " ";
+    //     }
+    //     std::cout << std::endl;
+    // }
 
     std::vector<double> dx(3);
     dx[0] = _point[0] - _verts[0][0];
     dx[1] = _point[1] - _verts[0][1];
     dx[2] = _point[2] - _verts[0][2];
+    // std::cout << "dx: " << dx[0] << " " << dx[1] << " " << dx[2] << std::endl;
 
     r1 = drdx[0][0]*dx[0] + drdx[0][1]*dx[1] + drdx[0][2]*dx[2];
     r2 = drdx[1][0]*dx[0] + drdx[1][1]*dx[1] + drdx[1][2]*dx[2];
     r3 = drdx[2][0]*dx[0] + drdx[2][1]*dx[1] + drdx[2][2]*dx[2];
+    // std::cout << "r1: " << r1 << " r2: " << r2 << " r3: " << r3 << std::endl;
 
     return {r1, r2, r3};
 }
@@ -300,4 +327,24 @@ void outputAspectRatio(const std::string &data_dir,
 
     }
     file.close();
+}
+
+double findTetraVolume(std::vector<std::vector<double>> &_verts)
+{
+    std::vector<std::vector<double>> dxdr(3, std::vector<double>(3));
+    dxdr[0][0] = _verts[1][0] - _verts[0][0];
+    dxdr[0][1] = _verts[2][0] - _verts[0][0];
+    dxdr[0][2] = _verts[3][0] - _verts[0][0];
+    dxdr[1][0] = _verts[1][1] - _verts[0][1];
+    dxdr[1][1] = _verts[2][1] - _verts[0][1];
+    dxdr[1][2] = _verts[3][1] - _verts[0][1];
+    dxdr[2][0] = _verts[1][2] - _verts[0][2];
+    dxdr[2][1] = _verts[2][2] - _verts[0][2];
+    dxdr[2][2] = _verts[3][2] - _verts[0][2];
+
+    double detj = dxdr[0][0]*(dxdr[1][1]*dxdr[2][2] - dxdr[1][2]*dxdr[2][1])
+                - dxdr[0][1]*(dxdr[1][0]*dxdr[2][2] - dxdr[1][2]*dxdr[2][0])
+                + dxdr[0][2]*(dxdr[1][0]*dxdr[2][1] - dxdr[1][1]*dxdr[2][0]);
+
+    return detj/6;
 }

@@ -13,7 +13,8 @@ public: // public member function
                       std::map<std::set<int>, std::vector<int>> &face_to_elems);
     ~Refinement_scheme();
     void executeRefinement(std::vector<std::vector<int>> &new_conn, 
-                           std::vector<std::vector<double>> &new_coor);
+                           std::vector<std::vector<double>> &new_coor,
+                           std::vector<int> &new_matid_arr);
 
 private: // private member function
     int m_max_elem_id;
@@ -24,11 +25,12 @@ private: // private member function
     std::set<int> m_candidate_elems;
     std::map<std::set<int>, std::vector<int>> m_face_to_elems;
 
-    void split14(int _tetra_id, std::vector<double> &_pt);
+    void split14(int _tetra_id, std::vector<double> &_pt, std::set<int> &elems_for_flip);
     void performFlip(int _elem_id);
     bool checkFlippable(int _o_tetra_id);
-    void flip23(int _o_tetra_id);
+    void flip23(int _o_tetra_id, std::set<int> &elems_for_flip);
     int findVertexPos(int _target_tetra, int _known_tetra, int _vert_pos);
     bool checkConcave(const std::vector<std::vector<double>> &_tri,
-                      const std::vector<double> &_pt);
+                      const std::vector<double> &_pt1,
+                      const std::vector<double> &_pt2);
 };

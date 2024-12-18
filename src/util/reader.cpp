@@ -141,5 +141,8 @@ void read_marked_elem(const std::string &data_dir,
         return;
     }
     fread(&marked_elem[0], sizeof(int), nelem_marked, fp);
+    for (int ielem = 0; ielem < nelem_marked; ielem++) {
+        marked_elem[ielem] -= 1;
+    }
     fclose(fp);
 }
