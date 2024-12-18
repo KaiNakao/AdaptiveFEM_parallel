@@ -28,26 +28,9 @@ private: // private member function
     // Switching Refinement Method 
     int switchScheme(int _elem_id);
 
-    // Schemes
-    void elementRefine(int _elem_id);
-    void nodeSmooth(int _elem_id);
-
-    // Mesh refinement tools
-    // void addPoints(int _elem_id);
-    bool checkFlippable(int _elem_id);
-    void performFlip(int _elem_id);
-    void split14(int _tetra_id, std::vector<double> &_pt);
-    void flip23(int _tetra_id);
-    void replaceAdjElem(int _elem_id, int _old_id, int _new_id);
-    int findVertexPos(int _target_tetra, int _known_tetra, int _vert_pos);
-
     // moving node tools
 
     // Other routines
-
-
-    // Update mesh data
-    void updateMeshData();
 
 private: // private member variable
     std::string m_data_dir;
