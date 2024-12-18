@@ -9,12 +9,12 @@ function write_mesh(data_dir)
     cny = cny[1:4, :]
     # coor = reshape(reinterpret(Float64, read(data_dir * "coor_quad.bin")), (3, :))
     coor = reshape(reinterpret(Float64, read(data_dir * "coor_linear.bin")), (3, :))
-    # eta = reshape(reinterpret(Float64, read(data_dir * "eta_quad.bin")), (1, :))
+    eta = reshape(reinterpret(Float64, read(data_dir * "eta_quad.bin")), (1, :))
     # displacement = reshape(reinterpret(Float64, read(data_dir * "displacement_quad.bin")), (3, :))
     marked_elem = reshape(reinterpret(Int32, read(data_dir * "marked_elem_quad.bin")), (1, :))
-    # load_elem = reshape(reinterpret(Int32, read(data_dir * "load_elem.bin")), (1, :))
-    # surf_elem = reshape(reinterpret(Int32, read(data_dir * "surf_elem.bin")), (1, :))
-    # partition = reshape(reinterpret(Int32, read(data_dir * "partition.bin")), (1, :))
+    load_elem = reshape(reinterpret(Int32, read(data_dir * "load_elem.bin")), (1, :))
+    surf_elem = reshape(reinterpret(Int32, read(data_dir * "surf_elem.bin")), (1, :))
+    partition = reshape(reinterpret(Int32, read(data_dir * "partition.bin")), (1, :))
     @show size(coor)
     @show size(cny)
     # @show size(eta)
@@ -31,15 +31,15 @@ function write_mesh(data_dir)
     cells = [MeshCell(VTKCellTypes.VTK_TETRA, cny[:, i]) for i = 1:size(cny, 2)]
 
     vtk_grid("./mesh", coor, cells) do vtk
-        # vtk["eta"] = eta[1, :]
+        vtk["eta"] = eta[1, :]
         vtk["material"] = material
         # vtk["displacement_x"] = displacement[1, :]
         # vtk["displacement_y"] = displacement[2, :]
         # vtk["displacement_z"] = displacement[3, :]
         vtk["marked_flag"] = marked_flag
-        # vtk["load_elem"] = load_elem
-        # vtk["surf_elem"] = surf_elem
-        # vtk["partition"] = partition
+        vtk["load_elem"] = load_elem
+        vtk["surf_elem"] = surf_elem
+        vtk["partition"] = partition
         vtk["elem_id"] = 1:size(cny, 2)
     end
 end 
@@ -112,6 +112,6 @@ function write_tmp()
     end
 end
 
-# write_mesh("/data6/itou/AFEM/data/analysis_result_iburi_large/")
-write_new_mesh("/data6/itou/AFEM/data/analysis_result_iburi_large/")
+write_mesh("/data6/itou/AFEM/data/analysis_result_iburi_large/")
+# write_new_mesh("/data6/itou/AFEM/data/analysis_result_iburi_large/")
 # write_tmp()
