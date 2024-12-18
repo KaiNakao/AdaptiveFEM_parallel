@@ -10,6 +10,7 @@ Refiner::Refiner()
 
 Refiner::Refiner(const std::string &data_dir)
 {
+    m_data_dir = data_dir;
     std::cout << " Reading shape..." << std::endl;
     int num_elem, num_node_linear, num_node_quad, num_material, num_elem_marked;
     read_shape(data_dir, num_elem, num_node_linear, num_node_quad, num_material, num_elem_marked);
