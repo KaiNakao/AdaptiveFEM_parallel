@@ -1,5 +1,4 @@
 using WriteVTK
-using Plots
 function write_mesh(data_dir)
     # cny = reshape(reinterpret(Int32, read(data_dir * "cny_quad.bin")), (11, :))
     # material = cny[11, :]
@@ -83,10 +82,6 @@ function write_new_mesh(data_dir)
         vtk["new_elem"] = new_elem
         vtk["material"] = material
     end
-
-    # plot_nodes = coor[:, 241032:end]
-    # scatter(plot_nodes[1, :], plot_nodes[2, :], plot_nodes[3, :], markersize=2)
-    # savefig("newnode.png")
 end
 
 function write_tmp()
@@ -112,6 +107,6 @@ function write_tmp()
     end
 end
 
-# write_mesh("/data6/itou/AFEM/data/analysis_result_iburi_large/")
+write_mesh("/data6/itou/AFEM/data/analysis_result_iburi_large/")
 write_new_mesh("/data6/itou/AFEM/data/analysis_result_iburi_large/")
 # write_tmp()
