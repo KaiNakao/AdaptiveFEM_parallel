@@ -1,6 +1,7 @@
 #include "../inc/refinement_scheme.hpp"
 #include "../inc/geo_util.hpp"
 #include <iostream>
+#include <stdlib.h>
 
 Refinement_scheme::Refinement_scheme(const std::set<int> &elem_refine,
                                      std::vector<std::vector<int>> &connectivity,
@@ -45,7 +46,7 @@ Refinement_scheme::Refinement_scheme(const std::set<int> &elem_refine,
         for (int idim = 0; idim < 3; idim++) {
             mid_point[idim] /= 2.0;
         }
-        m_points.push_back(mid_point);
+        //m_points.push_back(mid_point);
         for (int elem_id : edge_to_elems[edge]) {
             m_candidate_elems.insert(elem_id);
         }
@@ -975,3 +976,4 @@ bool Refinement_scheme::checkConcave(const std::vector<std::vector<double>> &_tr
         return false;
     }
 }
+

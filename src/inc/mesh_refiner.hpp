@@ -12,6 +12,7 @@
 #include <set>
 #include <map>
 #include <unordered_map>
+#include <stdlib.h>
 
 class Refiner
 {
@@ -32,32 +33,6 @@ private: // private member function
     // Switching Refinement Method 
     int switchScheme(int _elem_id);
 
-    // Schemes
-    void elementRefine(int _elem_id);
-    void nodeSmoothing();
-
-    // Mesh refinement tools
-    void addPoints(int _elem_id);
-    bool checkFlippable(int _elem_id);
-    void performFlip(int _elem_id);
-    void split14(int _tetra_id, std::vector<double> &_pt);
-    void flip23(int _tetra_id);
-    void replaceAdjElem(int _elem_id, int _old_id, int _new_id);
-    int findVertexPos(int _target_tetra, int _known_tetra, int _vert_pos);
-
-    // moving node tools
-    void fetchNodes();
-    std::vector<double> calculateMovingDirection(int _node_id);
-    void search_adj_nodes();
-    void moveNodes();
-    double findMaxAspectRatio();
-    bool compareMaxAspectRatio();
-
-    // Other routines
-
-    // Update mesh data
-    void updateMeshData();
-
 private: // private member variable
     // mesh info
     std::string m_data_dir;
@@ -68,6 +43,7 @@ private: // private member variable
     std::vector<int> m_marked_elems_id;                // size: number of MARKED elements
     std::vector<int> m_matid_arr;                      // size: number of elements
     std::map<std::set<int>, std::vector<int>> m_face_to_elems; // face to elements
+    std::map<int, std::vector<std::set<int>>> m_node_to_faces;
 
     // general info
     std::set<int> m_elem_refine;                       // element ids to be refined (node addition) <- not changed from initial data
@@ -84,6 +60,5 @@ private: // private member variable
     std::map<int, std::set<int>> m_adj_nodes;
     std::vector<int> m_elem_to_scheme;
 
-    /// TODO: implementation of suitable data structure
     std::vector<std::vector<double>> m_points;
 };
