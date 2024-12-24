@@ -98,20 +98,22 @@ void Refiner::executeRefinement()
     std::vector<std::vector<int>> new_connectivity;
     std::vector<std::vector<double>> new_coordinates;
     std::vector<int> new_matid_arr;
-    refinement_scheme.executeRefinement(new_connectivity, new_coordinates, new_matid_arr);
+    refinement_scheme.executeRefinement_bisect(new_connectivity, new_coordinates, new_matid_arr);
 
-    std::vector<double> volume_arr;
+
+    std::vector<double> volume_arr(new_connectivity.size());
+    std::vector<double> aspectratio_arr(new_connectivity.size());
     for (int ielem = 0; ielem < new_connectivity.size(); ielem++)
     {
         std::vector<std::vector<double>> tetra(4, std::vector<double>(3));
-        for (int i=0; i<4; ++i)
-        {
+        for (int i=0; i<4; ++i) {
             tetra[i] = new_coordinates[new_connectivity[ielem][i]];
         }
-        double volume = findTetraVolume(tetra);
-        volume_arr.push_back(volume);
+        volume_arr[ielem] = findTetraVolume(tetra);
+        aspectratio_arr[ielem] = findTetraAspectRatio(tetra);
     }
     std::cout << "minimum volume: " << *std::min_element(volume_arr.begin(), volume_arr.end()) << std::endl;
+    std::cout << "maximum aspect ratio: " << *std::max_element(aspectratio_arr.begin(), aspectratio_arr.end()) << std::endl;
 
     // output new mesh
     std::ofstream ofs;
@@ -137,6 +139,26 @@ void Refiner::executeRefinement()
         new_matid_arr[ielem] += 1;
         ofs.write(reinterpret_cast<const char*>(new_connectivity[ielem].data()), 4 * sizeof(int));
         ofs.write(reinterpret_cast<const char*>(&new_matid_arr[ielem]), sizeof(int));
+    }
+    ofs.close();
+
+    ofs.open(m_data_dir + "new_volume.bin", std::ios::binary);
+    if (!ofs) {
+        std::cerr << "Error opening file for new_volume" << std::endl;
+        return;
+    }
+    for (int ielem = 0; ielem < volume_arr.size(); ielem++) {
+        ofs.write(reinterpret_cast<const char*>(&volume_arr[ielem]), sizeof(double));
+    }
+    ofs.close();
+
+    ofs.open(m_data_dir + "new_aspectratio.bin", std::ios::binary);
+    if (!ofs) {
+        std::cerr << "Error opening file for new_aspectratio" << std::endl;
+        return;
+    }
+    for (int ielem = 0; ielem < aspectratio_arr.size(); ielem++) {
+        ofs.write(reinterpret_cast<const char*>(&aspectratio_arr[ielem]), sizeof(double));
     }
     ofs.close();
 }
