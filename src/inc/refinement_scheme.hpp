@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <map>
 #include <set>
+#include "entity.hpp"
 
 class Refinement_scheme {
 public: // public member function
@@ -12,6 +13,9 @@ public: // public member function
                       std::vector<int> &matid_arr,
                       std::map<std::set<int>, std::vector<int>> &face_to_elems);
     ~Refinement_scheme();
+    void executeRefinement_bisect(std::vector<std::vector<int>> &new_conn,
+                                  std::vector<std::vector<double>> &new_coor,
+                                  std::vector<int> &new_matid_arr);
     void executeRefinement(std::vector<std::vector<int>> &new_conn, 
                            std::vector<std::vector<double>> &new_coor,
                            std::vector<int> &new_matid_arr);
@@ -24,6 +28,7 @@ private: // private member function
     std::unordered_map<int, std::vector<double>> m_coor_map;
     std::set<int> m_candidate_elems;
     std::map<std::set<int>, std::vector<int>> m_face_to_elems;
+    std::set<int> m_elem_refine;
 
     void split14(int _tetra_id, std::vector<double> &_pt, std::set<int> &elems_for_flip);
     void performFlip(int _elem_id);
@@ -33,4 +38,9 @@ private: // private member function
     bool checkConcave(const std::vector<std::vector<double>> &_tri,
                       const std::vector<double> &_pt1,
                       const std::vector<double> &_pt2);
+    void local_refine(std::set<Tetrahedron> &t, std::set<Tetrahedron> &s);
+    void bisect_tets(std::set<Tetrahedron> &t, std::set<Tetrahedron> &s, std::map<Edge, int> &edges_cut);
+    void bisect_tet(std::set<Tetrahedron> &t, const Tetrahedron &tet, std::map<Edge, int> &edges_cut);
+    int find_tet_type(const Tetrahedron &tet);
+    void refine_to_conformity(std::set<Tetrahedron> &t, std::set<Tetrahedron> &s, std::map<Edge, int> &edges_cut);
 };

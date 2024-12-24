@@ -103,20 +103,22 @@ void Refiner::executeRefinement()
     std::vector<int> new_matid_arr;
     std::vector<std::vector<int>> new_connectivity;
     std::vector<std::vector<double>> new_coordinates;
-    refinement_scheme.executeRefinement(new_connectivity, new_coordinates, new_matid_arr);
+    refinement_scheme.executeRefinement_bisect(new_connectivity, new_coordinates, new_matid_arr);
 
-    std::vector<double> volume_arr;
+
+    std::vector<double> volume_arr(new_connectivity.size());
+    std::vector<double> aspectratio_arr(new_connectivity.size());
     for (int ielem = 0; ielem < new_connectivity.size(); ielem++)
     {
         std::vector<std::vector<double>> tetra(4, std::vector<double>(3));
-        for (int i=0; i<4; ++i)
-        {
+        for (int i=0; i<4; ++i) {
             tetra[i] = new_coordinates[new_connectivity[ielem][i]];
         }
-        double volume = findTetraVolume(tetra);
-        volume_arr.push_back(volume);
+        volume_arr[ielem] = findTetraVolume(tetra);
+        aspectratio_arr[ielem] = findTetraAspectRatio(tetra);
     }
     std::cout << "minimum volume: " << *std::min_element(volume_arr.begin(), volume_arr.end()) << std::endl;
+    std::cout << "maximum aspect ratio: " << *std::max_element(aspectratio_arr.begin(), aspectratio_arr.end()) << std::endl;
 
     // output new mesh
     std::ofstream ofs;
@@ -145,6 +147,26 @@ void Refiner::executeRefinement()
     }
     ofs.close();
 
+    ofs.open(m_data_dir + "new_volume.bin", std::ios::binary);
+    if (!ofs) {
+        std::cerr << "Error opening file for new_volume" << std::endl;
+        return;
+    }
+    for (int ielem = 0; ielem < volume_arr.size(); ielem++) {
+        ofs.write(reinterpret_cast<const char*>(&volume_arr[ielem]), sizeof(double));
+    }
+    ofs.close();
+
+    ofs.open(m_data_dir + "new_aspectratio.bin", std::ios::binary);
+    if (!ofs) {
+        std::cerr << "Error opening file for new_aspectratio" << std::endl;
+        return;
+    }
+    for (int ielem = 0; ielem < aspectratio_arr.size(); ielem++) {
+        ofs.write(reinterpret_cast<const char*>(&aspectratio_arr[ielem]), sizeof(double));
+    }
+    ofs.close();
+
     //output aspect ratio
     ofs.open(m_data_dir + "aspect_ratio.bin", std::ios::binary);
     if (!ofs) {
@@ -158,22 +180,6 @@ void Refiner::executeRefinement()
             verts[inode] = m_coordinates[m_connectivity[ielem][inode]];
         }
         aspect_ratio = findTetraAspectRatio(verts);
-        ofs.write(reinterpret_cast<const char*>(&aspect_ratio), sizeof(double));
-    }
-    ofs.close();
-    ofs.open(m_data_dir + "new_aspect_ratio.bin", std::ios::binary);
-    if (!ofs) {
-        std::cerr << "Error opening file for new_aspect_ratio" << std::endl;
-        return;
-    }
-    for (int ielem = 0; ielem < new_connectivity.size(); ielem++) {
-        double aspect_ratio;
-        std::vector<std::vector<double>> verts(4, std::vector<double>(3));
-        for (int inode=0; inode<4; ++inode){
-            verts[inode] = new_coordinates[new_connectivity[ielem][inode]-1];
-        }
-        aspect_ratio = findTetraAspectRatio(verts);
-        //std::cout << aspect_ratio << std::endl;
         ofs.write(reinterpret_cast<const char*>(&aspect_ratio), sizeof(double));
     }
     ofs.close();
