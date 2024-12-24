@@ -1,6 +1,7 @@
 #include "../inc/refinement_scheme.hpp"
 #include "../inc/geo_util.hpp"
 #include <iostream>
+#include <stdlib.h>
 
 Refinement_scheme::Refinement_scheme(const std::set<int> &elem_refine,
                                      std::vector<std::vector<int>> &connectivity,
@@ -45,12 +46,130 @@ Refinement_scheme::Refinement_scheme(const std::set<int> &elem_refine,
         for (int idim = 0; idim < 3; idim++) {
             mid_point[idim] /= 2.0;
         }
-        m_points.push_back(mid_point);
+        //m_points.push_back(mid_point);
         for (int elem_id : edge_to_elems[edge]) {
             m_candidate_elems.insert(elem_id);
         }
     }
     m_face_to_elems = face_to_elems;
+
+    for (const auto &ielem : elem_refine)
+    {
+        std::vector<std::vector<double>> verts(4, std::vector<double>(3));
+        for (int inode=0; inode<4; ++inode)
+        {
+            verts[inode] = coordinates[connectivity[ielem][inode]];
+        }
+        // classify shape and add suitable nodes
+        // good asp. -> 8 bisection
+        // poor asp. (needle, cap, sliver)
+        // needle -> 
+        // cap -> circum center
+    }
+
+    /*
+    // create tetgen dataset
+    //.node
+    std::ofstream ofs;
+    ofs.open("tetgen/refine.node");
+    int num_nodes = coordinates.size(); 
+    ofs << num_nodes << " " << 3 << " " << 0 << " " << 0 << std::endl;
+    for (int inode=0; inode<coordinates.size(); ++inode)
+    {
+        ofs << inode+1 << " ";
+        for (int idim=0; idim<3; ++idim)
+        {
+            ofs << coordinates[inode][idim] << " ";
+        }
+        ofs << std::endl;
+    }
+    ofs.close();
+    // .a.node
+    ofs.open("tetgen/refine.a.node");
+    num_nodes = m_points.size(); 
+    ofs << num_nodes << " " << 3 << " " << 0 << " " << 0 << std::endl;
+    for (int inode=0; inode<m_points.size(); ++inode) //////
+    {
+        ofs << inode+1+coordinates.size() << " ";
+        for (int idim=0; idim<3; ++idim)
+        {
+            ofs << m_points[inode][idim] << " ";
+        }
+        ofs << std::endl;
+    }
+    ofs.close();
+    // .ele
+    ofs.open("tetgen/refine.ele");
+    int num_elems = connectivity.size();
+    ofs << num_elems << " " << 4 << " " << 0 << " " << 1 << std::endl;
+    for (int ielem=0; ielem<num_elems; ++ielem)
+    {
+        ofs << ielem+1 << " ";
+        for (int inode=0; inode<4; ++inode)
+        {
+            ofs << connectivity[ielem][inode]+1 << " ";
+        }
+        ofs << std::endl;
+    }
+    ofs.close();
+    // .smesh
+    ofs.open("tetgen/refine.1.smesh");
+    num_nodes = coordinates.size() + m_points.size();
+    ofs << num_nodes << " " << 3 << " " << 0 << " " << 0 << std::endl;
+    for (int inode=0; inode<coordinates.size(); ++inode)
+    {
+        ofs << inode+1 << " ";
+        for (int idim=0; idim<3; ++idim)
+        {
+            ofs << coordinates[inode][idim] << " ";
+        }
+        ofs << std::endl;
+    }
+    num_nodes = m_points.size(); 
+    for (int inode=0; inode<m_points.size(); ++inode) //////
+    {
+        ofs << inode+1+coordinates.size() << " ";
+        for (int idim=0; idim<3; ++idim)
+        {
+            ofs << m_points[inode][idim] << " ";
+        }
+        ofs << std::endl;
+    }
+    auto begin = m_face_to_elems.begin(), end = m_face_to_elems.end();
+    int count=0;
+    for (auto iter = begin; iter != end; iter++)
+    {
+        std::vector<int> elems = iter->second;
+        if (elems.size()==2 && m_matid_map[elems[0]]==m_matid_map[elems[1]])
+        {
+            continue;
+        }
+        count++;
+    }
+    ofs << count << " " << 0 << std::endl;
+    for (auto iter = begin; iter != end; iter++)
+    {
+        std::set<int> face = iter->first;
+        std::vector<int> elems = iter->second;
+
+        if (elems.size()==2 && m_matid_map[elems[0]]==m_matid_map[elems[1]])
+        {
+            continue;
+        }
+        ofs << 3 << " ";
+        for (int node : face)
+        {
+            ofs << node+1 << " "; // you can add boundary marker
+        }
+        ofs << std::endl;
+    }
+    ofs << 0 << std::endl;
+    ofs << 0 << std::endl;
+    ofs.close();
+
+    int result;
+    result = system("tetgen/tetgen -pirk tetgen/refine"); // regenerate mesh
+    */
 }
 
 Refinement_scheme::~Refinement_scheme() {
@@ -622,3 +741,4 @@ bool Refinement_scheme::checkConcave(const std::vector<std::vector<double>> &_tr
         return false;
     }
 }
+

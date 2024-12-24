@@ -2,7 +2,10 @@
 
 SmoothingScheme::SmoothingScheme(const std::set<int> &elem_smooth,
                                  std::vector<std::vector<int>> &connectivity,
-                                 std::vector<std::vector<double>> &coordinates)
+                                 std::vector<std::vector<double>> &coordinates,
+                                 std::vector<int> &matid_arr,
+                                 std::map<std::set<int>, std::vector<int>> &face_to_elems,
+                                 std::map<int, std::vector<std::set<int>>> &node_to_faces)
 {
     std::cout << "smoothing constructor" << std::endl;
     std::vector<std::vector<int>> connectivity_tmp(connectivity.size(), std::vector<int>(4));
@@ -20,6 +23,11 @@ SmoothingScheme::SmoothingScheme(const std::set<int> &elem_smooth,
     for (int elem_id : elem_smooth) {
         m_elem_smooth.push_back(elem_id);
     }
+    for (int ielem = 0; ielem < connectivity.size(); ielem++) {
+        m_matid_map[ielem] = matid_arr[ielem];
+    }
+    m_node_to_faces = node_to_faces;
+    m_face_to_elems = face_to_elems;
 }
 
 SmoothingScheme::~SmoothingScheme()
@@ -35,22 +43,23 @@ void SmoothingScheme::executeSmoothing(std::vector<std::vector<int>> &new_conn,
     int max_iter = 200;
     search_adj_nodes();
     fetchNodes();
+    createMovableTabel();
     double prev_aspect_ratio = 100;
     for (int iter=0; iter<max_iter; ++iter)
     {
         moveNodes();
         double max_aspect_ratio = findMaxAspectRatio();
-        std::cout <<"max_aspect_ratio" << max_aspect_ratio << std::endl;
+        double euclidian_norm = findEuclidianNorm();
+        if (iter%5 == 0)
+        {
+            std::cout << iter << " " <<"max_aspect_ratio: " << max_aspect_ratio;
+            std::cout << " total distance: " << euclidian_norm << std::endl;
+        }
         if (prev_aspect_ratio<max_aspect_ratio)
         {
             break;
         }
         prev_aspect_ratio = max_aspect_ratio;
-        //bool comp = compareMaxAspectRatio();
-        //if (!comp)
-        //{
-        //    break;
-        //}
     }
 
     // output result
@@ -115,15 +124,18 @@ void SmoothingScheme::moveNodes()
     double lmd = 1e-2;
     for (int inode : m_node_smooth)
     {
-        //std::cout << inode << std::endl;
-        moving_direction = calculateMovingDirection(inode);
-        //for (int idim=0; idim<3; ++idim)
-        //{
-            //std::cout << "mv " << moving_direction[idim] << std::endl;
-            //new_coordinates[inode][idim] += lmd * moving_direction[idim];
-        //}
-        new_coordinates[inode][2] += lmd * moving_direction[2];
+        if (m_node_movable[inode])
+        {
+            moving_direction = calculateMovingDirection(inode);
+            for (int idim=0; idim<3; ++idim)
+            {
+              //std::cout << "mv " << moving_direction[idim] << std::endl;
+              new_coordinates[inode][idim] += lmd * moving_direction[idim];
+            }
+            //new_coordinates[inode][2] += lmd * moving_direction[2];
+        }
     }
+    m_coordinates_prev = m_coordinates;
     m_coordinates = new_coordinates;
 }
 
@@ -144,11 +156,51 @@ void SmoothingScheme::search_adj_nodes()
     }
 }
 
+// judge if the node is movable
+void SmoothingScheme::createMovableTabel()
+{
+    int count = 0;
+    for (int node : m_node_smooth)
+    {
+        std::vector<std::set<int>> faces = m_node_to_faces[node];
+        std::set<int> materials;
+        int flag_boundary = 0;
+        for (int iface=0; iface<faces.size(); ++iface)
+        {
+            std::set<int> face = faces[iface];
+            std::vector<int> elems = m_face_to_elems[face];
+            for (int ielem=0; ielem<elems.size(); ++ielem)
+            {
+                materials.insert(m_matid_map[elems[ielem]]);
+            }
+            if (elems.size() == 1)
+            {
+                flag_boundary = 1;
+            }
+        }
+        
+        if (materials.size()>1) // material boundary
+        {
+            m_node_movable[node] = false;
+        }
+        else if (flag_boundary == 1) // regional boundary
+        {
+            m_node_movable[node] = false;
+        }
+        else
+        {
+            m_node_movable[node] = true;
+            count++;
+        }
+    }
+    std::cout << "movable point count: " << count << " / " << m_node_smooth.size() <<std::endl;
+}
+
 // calculate max aspect_ratio
 double SmoothingScheme::findMaxAspectRatio()
 {
     double max_aspect_ratio = 0.0;
-    double aspect_ratio;
+    double aspect_ratio, prev_aspect_ratio;
     int num_elem_smooth = m_elem_smooth.size();
     for (int ielem=0; ielem<num_elem_smooth; ++ielem)
     {
@@ -159,9 +211,16 @@ double SmoothingScheme::findMaxAspectRatio()
             verts[inode] = m_coordinates[m_connectivity[elem_id][inode]];
         }
 
+        std::vector<std::vector<double>> prev_verts(4, std::vector<double>(3));
+        for (int inode=0; inode<4; ++inode)
+        {
+            prev_verts[inode] = m_coordinates_prev[m_connectivity[elem_id][inode]];
+        }
+
         aspect_ratio = findTetraAspectRatio(verts);
+        prev_aspect_ratio = findTetraAspectRatio(prev_verts);
         
-        if (aspect_ratio > max_aspect_ratio)
+        if (aspect_ratio > max_aspect_ratio && prev_aspect_ratio != aspect_ratio)
         {
             max_aspect_ratio = aspect_ratio;
         } 
@@ -169,50 +228,16 @@ double SmoothingScheme::findMaxAspectRatio()
     return max_aspect_ratio;
 }
 
-bool SmoothingScheme::compareMaxAspectRatio()
+double SmoothingScheme::findEuclidianNorm()
 {
-    int num_elem = m_connectivity.size();
-    double max_aspect_ratio = 0.0;
-    double external_max_aspect_ratio = 0.0;
-    double aspect_ratio;
-    for (int ielem=0; ielem<num_elem; ++ielem)
+    double euclidian_norm = 0.0;
+    double dx, dy, dz;
+    for (int inode=0; inode<m_coordinates.size(); ++inode)
     {
-        int flag = 0;
-        for (int j=0; j<m_elem_smooth.size(); ++j)
-        {
-            if (ielem == m_elem_smooth[j])
-            {
-                flag = 1;
-                break;
-            }
-        }
-
-        std::vector<std::vector<double>> verts(4, std::vector<double>(3));
-        for (int inode=0; inode<4; ++inode)
-        {
-            verts[inode] = m_coordinates[m_connectivity[ielem][inode]];
-        }
-        aspect_ratio = findTetraAspectRatio(verts);
-        if (flag == 0)
-        {
-            if (aspect_ratio > external_max_aspect_ratio)
-            {
-                external_max_aspect_ratio = aspect_ratio;
-            } 
-        }
-        else
-        {
-            if (aspect_ratio > max_aspect_ratio)
-            {
-                max_aspect_ratio = aspect_ratio;
-            } 
-        }
+        dx = m_coordinates[inode][0] - m_coordinates_prev[inode][0];
+        dy = m_coordinates[inode][1] - m_coordinates_prev[inode][1];
+        dz = m_coordinates[inode][2] - m_coordinates_prev[inode][2];
+        euclidian_norm += sqrt(dx*dx + dy*dy + dz*dz);
     }
-
-    std::cout << max_aspect_ratio << " " << external_max_aspect_ratio << std::endl;
-    if (max_aspect_ratio > external_max_aspect_ratio)
-    {
-        return false;
-    }
-    return true;
+    return euclidian_norm;
 }

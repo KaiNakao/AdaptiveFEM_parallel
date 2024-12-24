@@ -14,6 +14,7 @@ function write_mesh(data_dir)
     load_elem = reshape(reinterpret(Int32, read(data_dir * "load_elem.bin")), (1, :))
     surf_elem = reshape(reinterpret(Int32, read(data_dir * "surf_elem.bin")), (1, :))
     partition = reshape(reinterpret(Int32, read(data_dir * "partition.bin")), (1, :))
+    aspect_ratio = reshape(reinterpret(Float64, read(data_dir * "aspect_ratio.bin")), (1, :))
     @show size(coor)
     @show size(cny)
     # @show size(eta)
@@ -40,12 +41,14 @@ function write_mesh(data_dir)
         vtk["surf_elem"] = surf_elem
         vtk["partition"] = partition
         vtk["elem_id"] = 1:size(cny, 2)
+        vtk["aspect_ratio"] = aspect_ratio
     end
 end 
 
 function write_new_mesh(data_dir)
     cny = reshape(reinterpret(Int32, read(data_dir * "new_connectivity.bin")), (5, :))
     material = cny[5, :]
+    aspect_ratio = reshape(reinterpret(Float64, read(data_dir * "new_aspect_ratio.bin")), (1, :))
     cny = cny[1:4, :]
     coor = reshape(reinterpret(Float64, read(data_dir * "new_coordinates.bin")), (3, :))
     # eta = reshape(reinterpret(Float64, read(data_dir * "eta_quad.bin")), (1, :))
@@ -81,6 +84,7 @@ function write_new_mesh(data_dir)
     vtk_grid("./new_mesh", coor, cells) do vtk
         vtk["new_elem"] = new_elem
         vtk["material"] = material
+        vtk["aspect_ratio"] = aspect_ratio
     end
 end
 

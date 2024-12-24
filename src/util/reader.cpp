@@ -57,7 +57,7 @@ void read_mesh(const std::string &data_dir,
     }
 
     // Read coor
-    if ((fp = fopen((data_dir + "coor_quad.bin").c_str(), "r")) == NULL) {
+    if ((fp = fopen((data_dir + "coor_linear.bin").c_str(), "r")) == NULL) {
         std::cerr << "Error: cannot open file coor_quad.bin" << std::endl;
         return;
     }

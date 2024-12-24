@@ -6,7 +6,8 @@
 void search_adj_element(const std::vector<std::vector<int>> &cny, 
                         const std::vector<std::vector<double>> &coor, 
                         std::vector<std::vector<int>> &adj_elem,
-                        std::map<std::set<int>, std::vector<int>> &face_to_elems) {
+                        std::map<std::set<int>, std::vector<int>> &face_to_elems,
+                        std::map<int, std::vector<std::set<int>>> &node_to_faces) {
     
     // std::map<std::set<int>, std::vector<int>> face_to_elems;
     for (int ielem = 0; ielem < cny.size(); ielem++) {
@@ -19,6 +20,9 @@ void search_adj_element(const std::vector<std::vector<int>> &cny,
             }
 
             face_to_elems[face].push_back(ielem);
+            for (int inode = 0; inode < 3; inode++) {
+                node_to_faces[elem[inode]].push_back(face);
+            }
         }
     }
 
