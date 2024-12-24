@@ -103,17 +103,34 @@ void Refiner::executeRefinement()
     std::vector<int> new_matid_arr;
     std::vector<std::vector<int>> new_connectivity;
     std::vector<std::vector<double>> new_coordinates;
-    std::vector<int> original;
+    std::vector<int> original;  // flag  0 を拾う
     refinement_scheme.executeRefinement_bisect(new_connectivity, new_coordinates, new_matid_arr, original);
+    // 3. Do smoothing w.r.t. new elements
+    std::set<int> elem_resmooth;
+    for (int ielem=0; ielem<original.size(); ++ielem)
+    {
+        if (original[ielem] == 0)
+        {
+            elem_resmooth.insert(ielem);
+        }
+    }
+    std::vector<std::vector<int>> new_adj_elements(new_connectivity.size(), std::vector<int>(4));
+    std::map<std::set<int>, std::vector<int>> new_face_to_elems;
+    std::map<int, std::vector<std::set<int>>> new_node_to_faces;
+    search_adj_element( new_connectivity, new_coordinates, new_adj_elements, new_face_to_elems, new_node_to_faces);
+    std::vector<std::vector<int>> renew_connectivity;
+    std::vector<std::vector<double>> renew_coordinates;
+    SmoothingScheme re_smoothing(elem_resmooth, new_connectivity, new_coordinates, new_matid_arr, new_face_to_elems, new_node_to_faces);
+    re_smoothing.executeSmoothing(renew_connectivity, renew_coordinates);
 
 
-    std::vector<double> volume_arr(new_connectivity.size());
-    std::vector<double> aspectratio_arr(new_connectivity.size());
-    for (int ielem = 0; ielem < new_connectivity.size(); ielem++)
+    std::vector<double> volume_arr(renew_connectivity.size());
+    std::vector<double> aspectratio_arr(renew_connectivity.size());
+    for (int ielem = 0; ielem < renew_connectivity.size(); ielem++)
     {
         std::vector<std::vector<double>> tetra(4, std::vector<double>(3));
         for (int i=0; i<4; ++i) {
-            tetra[i] = new_coordinates[new_connectivity[ielem][i]];
+            tetra[i] = renew_coordinates[renew_connectivity[ielem][i]];
         }
         volume_arr[ielem] = findTetraVolume(tetra);
         aspectratio_arr[ielem] = findTetraAspectRatio(tetra);
@@ -128,8 +145,8 @@ void Refiner::executeRefinement()
         std::cerr << "Error opening file for new_coordinates" << std::endl;
         return;
     }
-    for (int inode = 0; inode < new_coordinates.size(); inode++) {
-        ofs.write(reinterpret_cast<const char*>(new_coordinates[inode].data()), 3 * sizeof(double));
+    for (int inode = 0; inode < renew_coordinates.size(); inode++) {
+        ofs.write(reinterpret_cast<const char*>(renew_coordinates[inode].data()), 3 * sizeof(double));
     }
     ofs.close();
 
@@ -138,12 +155,12 @@ void Refiner::executeRefinement()
         std::cerr << "Error opening file for new_connectivity" << std::endl;
         return;
     }
-    for (int ielem = 0; ielem < new_connectivity.size(); ielem++) {
+    for (int ielem = 0; ielem < renew_connectivity.size(); ielem++) {
         for (int inode = 0; inode < 4; inode++) {
-            new_connectivity[ielem][inode] += 1;
+            renew_connectivity[ielem][inode] += 1;
         }
         new_matid_arr[ielem] += 1;
-        ofs.write(reinterpret_cast<const char*>(new_connectivity[ielem].data()), 4 * sizeof(int));
+        ofs.write(reinterpret_cast<const char*>(renew_connectivity[ielem].data()), 4 * sizeof(int));
         ofs.write(reinterpret_cast<const char*>(&new_matid_arr[ielem]), sizeof(int));
     }
     ofs.close();

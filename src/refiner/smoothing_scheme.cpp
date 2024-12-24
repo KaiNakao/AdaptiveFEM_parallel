@@ -45,21 +45,23 @@ void SmoothingScheme::executeSmoothing(std::vector<std::vector<int>> &new_conn,
     fetchNodes();
     createMovableTabel();
     double prev_aspect_ratio = 100;
+    double prev_norm = 0;
     for (int iter=0; iter<max_iter; ++iter)
     {
         moveNodes();
         double max_aspect_ratio = findMaxAspectRatio();
         double euclidian_norm = findEuclidianNorm();
-        if (iter%5 == 0)
+        if (iter%1 == 0)
         {
             std::cout << iter << " " <<"max_aspect_ratio: " << max_aspect_ratio;
             std::cout << " total distance: " << euclidian_norm << std::endl;
         }
-        if (prev_aspect_ratio<max_aspect_ratio)
+        if (fabs(prev_norm - euclidian_norm) < 5)
         {
             break;
         }
         prev_aspect_ratio = max_aspect_ratio;
+        prev_norm = euclidian_norm;
     }
 
     // output result
@@ -129,7 +131,7 @@ void SmoothingScheme::moveNodes()
             moving_direction = calculateMovingDirection(inode);
             for (int idim=0; idim<3; ++idim)
             {
-              //std::cout << "mv " << moving_direction[idim] << std::endl;
+              std::cout << "mv " << moving_direction[idim] << std::endl;
               new_coordinates[inode][idim] += lmd * moving_direction[idim];
             }
             //new_coordinates[inode][2] += lmd * moving_direction[2];
