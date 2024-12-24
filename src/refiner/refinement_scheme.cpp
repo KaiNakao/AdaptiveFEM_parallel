@@ -46,7 +46,6 @@ Refinement_scheme::Refinement_scheme(const std::set<int> &elem_refine,
         for (int idim = 0; idim < 3; idim++) {
             mid_point[idim] /= 2.0;
         }
-        //m_points.push_back(mid_point);
         for (int elem_id : edge_to_elems[edge]) {
             m_candidate_elems.insert(elem_id);
         }
@@ -60,7 +59,8 @@ Refinement_scheme::~Refinement_scheme() {
 
 void Refinement_scheme::executeRefinement_bisect(std::vector<std::vector<int>> &new_conn,
                                                  std::vector<std::vector<double>> &new_coor,
-                                                 std::vector<int> &new_matid_arr) {
+                                                 std::vector<int> &new_matid_arr, 
+                                                 std::vector<int> &original) {
     std::cout << "executeRefinement_bisect" << std::endl;
 
     std::set<Tetrahedron> t, s;
@@ -124,6 +124,8 @@ void Refinement_scheme::executeRefinement_bisect(std::vector<std::vector<int>> &
         tet.flag = false;
         // tet.material
         tet.material = m_matid_map.at(elem_id);
+        // tet.original
+        tet.original = true;
         t.insert(tet);
         if (m_elem_refine.count(elem_id)) {
             s.insert(tet);
@@ -140,6 +142,7 @@ void Refinement_scheme::executeRefinement_bisect(std::vector<std::vector<int>> &
 
     new_conn.resize(t.size());
     new_matid_arr.resize(t.size());
+    original.resize(t.size());
     int ielem = 0;
     for (const auto &tet : t) {
         for (int node_id : tet.nodes) {
@@ -158,6 +161,11 @@ void Refinement_scheme::executeRefinement_bisect(std::vector<std::vector<int>> &
             volume = findTetraVolume(tetra);
         }
         new_matid_arr[ielem] = tet.material;
+        if (tet.original) {
+            original[ielem] = 1;
+        } else {
+            original[ielem] = 0;
+        }
         ielem += 1;
     }
 }
@@ -345,6 +353,10 @@ void Refinement_scheme::bisect_tet(std::set<Tetrahedron> &t, const Tetrahedron &
     // tet.material 
     t1.material = tet.material;
     t2.material = tet.material;
+
+    // tet.original
+    t1.original = false;
+    t2.original = false;
 
     t.insert(t1);
     t.insert(t2);
