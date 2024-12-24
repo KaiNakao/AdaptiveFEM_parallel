@@ -51,9 +51,362 @@ Refinement_scheme::Refinement_scheme(const std::set<int> &elem_refine,
         }
     }
     m_face_to_elems = face_to_elems;
+    m_elem_refine = elem_refine;
 }
 
 Refinement_scheme::~Refinement_scheme() {
+}
+
+void Refinement_scheme::executeRefinement_bisect(std::vector<std::vector<int>> &new_conn,
+                                                 std::vector<std::vector<double>> &new_coor,
+                                                 std::vector<int> &new_matid_arr) {
+    std::cout << "executeRefinement_bisect" << std::endl;
+
+    std::set<Tetrahedron> t, s;
+    // initialize t, s
+    for (const auto &p : m_elems_in_mesh) {
+        int elem_id = p.first;
+        std::vector<int> tet_nodes = p.second;
+        Tetrahedron tet;
+        // tet.nodes
+        for (int node_id : tet_nodes) {
+            tet.nodes.insert(node_id);
+        }
+        // tet.faces
+        for (int iface = 0; iface < 4; iface++) {
+            Face face;
+            // face.nodes
+            std::vector<int> face_nodes;
+            for (int inode = 0; inode < 3; inode++) {
+                face.nodes.insert(tet_nodes.at((iface + inode + 1) % 4));
+                face_nodes.push_back(tet_nodes.at((iface + inode + 1) % 4));
+            }
+            // face.marked_edge
+            double longest = 0.;
+            int idx1, idx2;
+            for (int iedge = 0; iedge < 3; iedge++) {
+                int idx1_tmp = face_nodes.at(iedge);
+                int idx2_tmp = face_nodes.at((iedge + 1) % 3);
+                std::vector<double> p1 = m_coor_map.at(idx1_tmp), p2 = m_coor_map.at(idx2_tmp);
+                double length = findLength(p1, p2);
+                if (length > longest) {
+                    longest = length;
+                    idx1 = idx1_tmp;
+                    idx2 = idx2_tmp;
+                }
+            }
+            face.marked_edge.nodes.insert(idx1);
+            face.marked_edge.nodes.insert(idx2);
+            tet.faces.push_back(face);
+        }
+        // tet.refinement_edge
+        double longest = 0.;
+        int idx1, idx2;
+        for (const auto &face : tet.faces) {
+            std::vector<int> edge_nodes;
+            for (int inode : face.marked_edge.nodes) {
+                edge_nodes.push_back(inode);
+            }
+            int idx1_tmp = edge_nodes.at(0);
+            int idx2_tmp = edge_nodes.at(1);
+            std::vector<double> p1 = m_coor_map.at(idx1_tmp), p2 = m_coor_map.at(idx2_tmp);
+            double length = findLength(p1, p2);
+            if (length > longest) {
+                longest = length;
+                idx1 = idx1_tmp;
+                idx2 = idx2_tmp;
+            }
+        }
+        tet.refinement_edge.nodes.insert(idx1);
+        tet.refinement_edge.nodes.insert(idx2);
+        // tet.flag
+        tet.flag = false;
+        // tet.material
+        tet.material = m_matid_map.at(elem_id);
+        t.insert(tet);
+        if (m_elem_refine.count(elem_id)) {
+            s.insert(tet);
+        }
+    }
+
+    local_refine(t, s);
+
+    // output new mesh
+    new_coor.resize(m_coor_map.size());
+    for (int node_id = 0; node_id < m_coor_map.size(); node_id++) {
+        new_coor[node_id] = m_coor_map[node_id];
+    }
+
+    new_conn.resize(t.size());
+    new_matid_arr.resize(t.size());
+    int ielem = 0;
+    for (const auto &tet : t) {
+        for (int node_id : tet.nodes) {
+            new_conn[ielem].push_back(node_id);
+        }
+        std::vector<std::vector<double>> tetra(4, std::vector<double>(3));
+        for (int i = 0; i < 4; i++) {
+            tetra[i] = new_coor[new_conn[ielem][i]];
+        }
+        double volume = findTetraVolume(tetra);
+        while (volume < 1.e-10) {
+            std::swap(new_conn[ielem][2], new_conn[ielem][3]);
+            for (int i = 0; i < 4; i++) {
+                tetra[i] = new_coor[new_conn[ielem][i]];
+            }
+            volume = findTetraVolume(tetra);
+        }
+        new_matid_arr[ielem] = tet.material;
+        ielem += 1;
+    }
+}
+
+void Refinement_scheme::local_refine(std::set<Tetrahedron> &t, std::set<Tetrahedron> &s) {
+    std::map<Edge, int> edges_cut;
+    bisect_tets(t, s, edges_cut);
+    refine_to_conformity(t, s, edges_cut);
+    return;
+}
+
+void Refinement_scheme::bisect_tets(std::set<Tetrahedron> &t, std::set<Tetrahedron> &s, std::map<Edge, int> &edges_cut) {
+    for (const Tetrahedron &tet : s) {
+        bisect_tet(t, tet, edges_cut);
+        // remove
+        t.erase(tet);
+    }
+    s.clear();
+}
+
+int Refinement_scheme::find_tet_type(const Tetrahedron &tet) {
+    int parent_type = -1;
+    // find tet type
+    int cnt = 0;
+    std::set<int> nodes_all;
+    for (const auto face : tet.faces) {
+        for (int node_id : face.marked_edge.nodes) {
+            if (tet.refinement_edge.nodes.count(node_id)) {
+                cnt += 1;
+            }
+            nodes_all.insert(node_id);
+        }
+    }
+    if (cnt == 6) {
+        if (nodes_all.size() == 3) {
+            if (tet.flag) {
+                parent_type = 0; // Pftype
+            }
+            else {
+                parent_type = 1; // Putype
+            }
+        } else {
+            parent_type = 2; // Atype
+        }
+    } else if (cnt == 5) {
+        parent_type = 3; // Mtype
+    } else if (cnt == 4) {
+        parent_type = 4; // Otype
+    } 
+    if (parent_type == -1) {
+        std::cout << "ERROR: tet type not found" << std::endl;
+        std::cout << "cnt: " << cnt << std::endl;
+        std::cout << "nodes_all.size(): " << nodes_all.size() << std::endl;
+        std::exit(1);
+    }
+    return parent_type;
+}
+
+void Refinement_scheme::bisect_tet(std::set<Tetrahedron> &t, const Tetrahedron &tet, std::map<Edge, int> &edges_cut) {
+    int parent_type = find_tet_type(tet);
+    std::vector<int> nodes_refine_edge, nodes_opposite_edge;
+    for (int node_id : tet.nodes) {
+        if (tet.refinement_edge.nodes.count(node_id)) {
+            nodes_refine_edge.push_back(node_id);
+        } else {
+            nodes_opposite_edge.push_back(node_id);
+        }
+    }
+    int anode = nodes_refine_edge.at(0);
+    int bnode = nodes_refine_edge.at(1);
+    int cnode = nodes_opposite_edge.at(0);
+    int dnode = nodes_opposite_edge.at(1);
+
+    // midpoint
+    std::vector<double> mid_point(3);
+    for (int node_id : tet.refinement_edge.nodes) {
+        for (int idim = 0; idim < 3; idim++) {
+            mid_point[idim] += m_coor_map[node_id][idim];
+        }
+    }
+    for (int idim = 0; idim < 3; idim++) {
+        mid_point[idim] /= 2.0;
+    }
+    int enode;
+    if (edges_cut.count(tet.refinement_edge)) {
+        enode = edges_cut.at(tet.refinement_edge);
+    }
+    else {
+        enode = m_coor_map.size();
+        edges_cut[tet.refinement_edge] = enode;
+        m_coor_map[enode] = mid_point;
+    }
+
+    // new tetrahedra
+    Tetrahedron t1, t2;
+    // tet.nodes
+    t1.nodes = {anode, enode, cnode, dnode};
+    t2.nodes = {enode, bnode, cnode, dnode};
+    // tet.faces
+    // inherited face
+    Face face11, face21, face_org;
+    face11.nodes = {anode, dnode, cnode};
+    for (const auto &face : tet.faces) {
+        if (face.nodes == face11.nodes) {
+            face_org = face;
+            break;
+        }
+    }
+    face11.marked_edge = face_org.marked_edge;
+    t1.faces.push_back(face11);
+    t1.refinement_edge = face11.marked_edge;
+
+    face21.nodes = {bnode, cnode, dnode};
+    for (const auto &face : tet.faces) {
+        if (face.nodes == face21.nodes) {
+            face_org = face;
+            break;
+        }
+    }
+    face21.marked_edge = face_org.marked_edge;
+    t2.faces.push_back(face21);
+    t2.refinement_edge = face21.marked_edge;
+
+    // cut face
+    Face face12, face13, face22, face23;
+    face12.nodes = {anode, enode, cnode};
+    face13.nodes = {anode, enode, dnode};
+    face12.marked_edge.nodes = {anode, cnode};
+    face13.marked_edge.nodes = {anode, dnode};
+    t1.faces.push_back(face12);
+    t1.faces.push_back(face13);
+
+    face22.nodes = {enode, bnode, cnode};
+    face23.nodes = {enode, bnode, dnode};
+    face22.marked_edge.nodes = {bnode, cnode};
+    face23.marked_edge.nodes = {bnode, dnode};
+    t2.faces.push_back(face22);
+    t2.faces.push_back(face23);
+
+    // new face
+    Face face14, face24;
+    face14.nodes = {enode, cnode, dnode};
+    // Pftype
+    if (parent_type == 0) {
+        face14.marked_edge.nodes.insert(enode);
+        if (t1.refinement_edge.nodes.count(cnode)) {
+            face14.marked_edge.nodes.insert(cnode);
+        } 
+        else {
+            face14.marked_edge.nodes.insert(dnode);
+        }
+    } 
+    else {
+        face14.marked_edge.nodes = {cnode, dnode};
+    }
+    t1.faces.push_back(face14);    
+
+    face24.nodes = {enode, cnode, dnode};
+    // Pftype
+    if (parent_type == 0) {
+        face24.marked_edge.nodes.insert(enode);
+        if (t2.refinement_edge.nodes.count(cnode)) {
+            face24.marked_edge.nodes.insert(cnode);
+        } 
+        else {
+            face24.marked_edge.nodes.insert(dnode);
+        }
+    } 
+    else {
+        face24.marked_edge.nodes = {cnode, dnode};
+    }
+    t2.faces.push_back(face24);
+
+    // tet.flag
+    // Putype
+    if (parent_type == 1) {
+        t1.flag = true;
+        t2.flag = true;
+    }
+    else {
+        t1.flag = false;
+        t2.flag = false;
+    }
+
+    // tet.material 
+    t1.material = tet.material;
+    t2.material = tet.material;
+
+    t.insert(t1);
+    t.insert(t2);
+
+    // std::cout << "parent tet------" << std::endl;
+    // tet.print();
+    // std::cout << "t1 tet---------"  << std::endl;
+    // t1.print();
+    // std::cout << "t2 tet---------"  << std::endl;
+    // t2.print();
+
+    // int t1_type = find_tet_type(t1), t2_type = find_tet_type(t2);
+    // if (parent_type == 0 && (t1_type != 2 || t2_type != 2)) {
+    //     std::cout << "ERROR: Children of Pftype tetrahedra not Atype" << std::endl;
+    //     std::exit(1);
+    // }
+    // if (parent_type == 1 && (t1_type != 0 || t2_type != 0)) {
+    //     std::cout << "ERROR: Children of Putype tetrahedra not Pftype" << std::endl;
+    //     std::exit(1);
+    // }
+    // if (parent_type == 2 && (t1_type != 1 || t2_type != 1)) {
+    //     std::cout << "ERROR: Children of Atype tetrahedra not Putype" << std::endl;
+    //     std::exit(1);
+    // }
+    // if (parent_type == 3 && (t1_type != 1 || t2_type != 1)) {
+    //     std::cout << "ERROR: Children of Mtype tetrahedra not Putype" << std::endl;
+    //     std::exit(1);
+    // }
+    // if (parent_type == 4 && (t1_type != 1 || t2_type != 1)) {
+    //     std::cout << "ERROR: Children of Otype tetrahedra not Putype" << std::endl;
+    //     std::exit(1);
+    // }
+}
+
+void Refinement_scheme::refine_to_conformity(std::set<Tetrahedron> &t, std::set<Tetrahedron> &s, std::map<Edge, int> &edges_cut) {
+    // check hanging nodes
+    for (const auto &tet : t) {
+        std::vector<int> tet_nodes(tet.nodes.begin(), tet.nodes.end());   
+        std::set<Edge> edges;
+        Edge edge1, edge2, edge3, edge4, edge5, edge6;
+        edge1.nodes = {tet_nodes[0], tet_nodes[1]};
+        edge2.nodes = {tet_nodes[1], tet_nodes[2]};
+        edge3.nodes = {tet_nodes[2], tet_nodes[0]};
+        edge4.nodes = {tet_nodes[0], tet_nodes[3]};
+        edge5.nodes = {tet_nodes[1], tet_nodes[3]};
+        edge6.nodes = {tet_nodes[2], tet_nodes[3]};
+        for (const auto &edge : {edge1, edge2, edge3, edge4, edge5, edge6}) {
+            if (edges_cut.count(edge)) {
+                s.insert(tet);
+                break;
+            }
+        }
+    }
+
+    std::cout << "number of elements with hanging nodes: " << s.size() << std::endl;
+
+    if (s.size() == 0) {
+        return;
+    }
+    else {
+        bisect_tets(t, s, edges_cut);
+        refine_to_conformity(t, s, edges_cut);
+    }
 }
 
 void Refinement_scheme::executeRefinement(std::vector<std::vector<int>> &new_conn, 
