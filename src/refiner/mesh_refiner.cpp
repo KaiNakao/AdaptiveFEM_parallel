@@ -17,11 +17,11 @@ Refiner::Refiner(const std::string &data_dir)
 
     std::cout << " Reading mesh..." << std::endl;
     std::vector<std::vector<int>> cny(num_elem, std::vector<int>(10));
-    std::vector<std::vector<double>> coor(num_node_quad, std::vector<double>(3));
+    std::vector<std::vector<double>> coor(num_node_linear, std::vector<double>(3));
     std::vector<std::vector<int>> adj_elems(num_elem, std::vector<int>(4));
     std::vector<int> matid_arr(num_elem);
     std::map<std::set<int>, std::vector<int>> face_to_elems;
-    read_mesh(data_dir, num_elem, num_node_quad, cny, coor, matid_arr);
+    read_mesh(data_dir, num_elem, num_node_linear, cny, coor, matid_arr);
     search_adj_element(cny, coor, adj_elems, face_to_elems);
     m_face_to_elems = face_to_elems;
     m_coordinates = coor;
