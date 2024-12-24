@@ -33,6 +33,7 @@ struct Tetrahedron {
     Edge refinement_edge;
     bool flag;
     int material;
+    bool original;
 
     Tetrahedron() {
         nodes = {};
@@ -40,6 +41,7 @@ struct Tetrahedron {
         refinement_edge = {};
         flag = false;
         material = -1;
+        original = false;
     }
 
     bool operator<(const Tetrahedron &rhs) const {

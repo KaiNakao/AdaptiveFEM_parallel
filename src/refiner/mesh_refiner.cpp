@@ -103,7 +103,8 @@ void Refiner::executeRefinement()
     std::vector<int> new_matid_arr;
     std::vector<std::vector<int>> new_connectivity;
     std::vector<std::vector<double>> new_coordinates;
-    refinement_scheme.executeRefinement_bisect(new_connectivity, new_coordinates, new_matid_arr);
+    std::vector<int> original;
+    refinement_scheme.executeRefinement_bisect(new_connectivity, new_coordinates, new_matid_arr, original);
 
 
     std::vector<double> volume_arr(new_connectivity.size());

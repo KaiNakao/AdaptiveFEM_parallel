@@ -15,7 +15,8 @@ public: // public member function
     ~Refinement_scheme();
     void executeRefinement_bisect(std::vector<std::vector<int>> &new_conn,
                                   std::vector<std::vector<double>> &new_coor,
-                                  std::vector<int> &new_matid_arr);
+                                  std::vector<int> &new_matid_arr,
+                                  std::vector<int> &original);
     void executeRefinement(std::vector<std::vector<int>> &new_conn, 
                            std::vector<std::vector<double>> &new_coor,
                            std::vector<int> &new_matid_arr);
