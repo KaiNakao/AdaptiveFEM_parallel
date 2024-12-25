@@ -50,7 +50,7 @@ function write_new_mesh(data_dir)
     material = cny[5, :]
     cny = cny[1:4, :]
     coor = reshape(reinterpret(Float64, read(data_dir * "new_coordinates.bin")), (3, :))
-    aspect_ratio = reshape(reinterpret(Float64, read(data_dir * "new_aspectratio.bin")), (1, :))
+    aspect_ratio = reshape(reinterpret(Float64, read(data_dir * "new_aspect_ratio.bin")), (1, :))
     original = reshape(reinterpret(Int32, read(data_dir * "new_original.bin")), (1, :))
     node_id = 0:size(coor, 2) - 1
     elem_id = 0:size(cny, 2) - 1

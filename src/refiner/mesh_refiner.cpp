@@ -52,6 +52,7 @@ Refiner::Refiner(const std::string &data_dir)
 // MAIN ROUTINE for Refiner
 void Refiner::executeRefinement()
 {
+    std::ofstream ofs;
     int num_points_added = m_points.size();
     for (int ipoint=0; ipoint<num_points_added; ++ipoint)
     {
@@ -91,11 +92,44 @@ void Refiner::executeRefinement()
         }
     }
 
+    //output aspect ratio
+    ofs.open(m_data_dir + "aspect_ratio_0.bin", std::ios::binary);
+    if (!ofs) {
+        std::cerr << "Error opening file for aspect_ratio" << std::endl;
+        return;
+    }
+    for (int ielem = 0; ielem < m_connectivity.size(); ielem++) {
+        double aspect_ratio;
+        std::vector<std::vector<double>> verts(4, std::vector<double>(3));
+        for (int inode=0; inode<4; ++inode){
+            verts[inode] = m_coordinates[m_connectivity[ielem][inode]];
+        }
+        aspect_ratio = findTetraAspectRatio(verts);
+        ofs.write(reinterpret_cast<const char*>(&aspect_ratio), sizeof(double));
+    }
+    ofs.close();
+
     // 1. Do smoothing
     std::vector<std::vector<int>> tmp_connectivity;
     std::vector<std::vector<double>> tmp_coordinates;
-    SmoothingScheme smoothing(m_elem_smooth, m_connectivity, m_coordinates, m_matid_arr, m_face_to_elems, m_node_to_faces);
+    SmoothingScheme smoothing(m_elem_smooth, m_connectivity, m_coordinates, m_matid_arr, m_face_to_elems, m_node_to_faces, m_adj_elements);
     smoothing.executeSmoothing(tmp_connectivity, tmp_coordinates);
+    //output aspect ratio
+    ofs.open(m_data_dir + "aspect_ratio_1.bin", std::ios::binary);
+    if (!ofs) {
+        std::cerr << "Error opening file for aspect_ratio" << std::endl;
+        return;
+    }
+    for (int ielem = 0; ielem < tmp_connectivity.size(); ielem++) {
+        double aspect_ratio;
+        std::vector<std::vector<double>> verts(4, std::vector<double>(3));
+        for (int inode=0; inode<4; ++inode){
+            verts[inode] = tmp_coordinates[tmp_connectivity[ielem][inode]];
+        }
+        aspect_ratio = findTetraAspectRatio(verts);
+        ofs.write(reinterpret_cast<const char*>(&aspect_ratio), sizeof(double));
+    }
+    ofs.close();
     // 2. DO mesh refinement
     Refinement_scheme refinement_scheme = Refinement_scheme(m_elem_refine, tmp_connectivity, 
                                                             tmp_coordinates, m_matid_arr, 
@@ -105,13 +139,44 @@ void Refiner::executeRefinement()
     std::vector<std::vector<double>> new_coordinates;
     std::vector<int> original;  // flag  0 を拾う
     refinement_scheme.executeRefinement_bisect(new_connectivity, new_coordinates, new_matid_arr, original);
+    std::cout << "original - 130228 " << original[130228] << std::endl;
+    //output aspect ratio
+    ofs.open(m_data_dir + "aspect_ratio_2.bin", std::ios::binary);
+    if (!ofs) {
+        std::cerr << "Error opening file for aspect_ratio" << std::endl;
+        return;
+    }
+    for (int ielem = 0; ielem < new_connectivity.size(); ielem++) {
+        double aspect_ratio;
+        std::vector<std::vector<double>> verts(4, std::vector<double>(3));
+        for (int inode=0; inode<4; ++inode){
+            verts[inode] = new_coordinates[new_connectivity[ielem][inode]];
+        }
+        aspect_ratio = findTetraAspectRatio(verts);
+        ofs.write(reinterpret_cast<const char*>(&aspect_ratio), sizeof(double));
+    }
+    ofs.close();
+
+    std::cout << "original - 130228 " << original[130228] << std::endl;
+
     // 3. Do smoothing w.r.t. new elements
     std::set<int> elem_resmooth;
-    for (int ielem=0; ielem<original.size(); ++ielem)
+    for (int ielem=0; ielem<original.size(); ielem++)
     {
+        if (ielem == 130228)
+        {
+            std::cout << "130228 detected" << std::endl;
+            std::cout << original[ielem] << std::endl;
+        }
         if (original[ielem] == 0)
         {
             elem_resmooth.insert(ielem);
+        }
+    }
+    for (int elem_id : elem_resmooth) {
+        if (elem_id == 130228)
+        {
+            std::cout << "130228 detected in elem_resmooth" << std::endl;
         }
     }
     std::vector<std::vector<int>> new_adj_elements(new_connectivity.size(), std::vector<int>(4));
@@ -120,8 +185,24 @@ void Refiner::executeRefinement()
     search_adj_element( new_connectivity, new_coordinates, new_adj_elements, new_face_to_elems, new_node_to_faces);
     std::vector<std::vector<int>> renew_connectivity;
     std::vector<std::vector<double>> renew_coordinates;
-    SmoothingScheme re_smoothing(elem_resmooth, new_connectivity, new_coordinates, new_matid_arr, new_face_to_elems, new_node_to_faces);
+    SmoothingScheme re_smoothing(elem_resmooth, new_connectivity, new_coordinates, new_matid_arr, new_face_to_elems, new_node_to_faces, new_adj_elements);
     re_smoothing.executeSmoothing(renew_connectivity, renew_coordinates);
+    //output aspect ratio
+    ofs.open(m_data_dir + "aspect_ratio_3.bin", std::ios::binary);
+    if (!ofs) {
+        std::cerr << "Error opening file for aspect_ratio" << std::endl;
+        return;
+    }
+    for (int ielem = 0; ielem < renew_connectivity.size(); ielem++) {
+        double aspect_ratio;
+        std::vector<std::vector<double>> verts(4, std::vector<double>(3));
+        for (int inode=0; inode<4; ++inode){
+            verts[inode] = renew_coordinates[renew_connectivity[ielem][inode]];
+        }
+        aspect_ratio = findTetraAspectRatio(verts);
+        ofs.write(reinterpret_cast<const char*>(&aspect_ratio), sizeof(double));
+    }
+    ofs.close();
 
 
     std::vector<double> volume_arr(renew_connectivity.size());
@@ -139,7 +220,6 @@ void Refiner::executeRefinement()
     std::cout << "maximum aspect ratio: " << *std::max_element(aspectratio_arr.begin(), aspectratio_arr.end()) << std::endl;
 
     // output new mesh
-    std::ofstream ofs;
     ofs.open(m_data_dir + "new_coordinates.bin", std::ios::binary);
     if (!ofs) {
         std::cerr << "Error opening file for new_coordinates" << std::endl;
@@ -175,7 +255,7 @@ void Refiner::executeRefinement()
     }
     ofs.close();
 
-    ofs.open(m_data_dir + "new_aspectratio.bin", std::ios::binary);
+    ofs.open(m_data_dir + "new_aspect_ratio.bin", std::ios::binary);
     if (!ofs) {
         std::cerr << "Error opening file for new_aspectratio" << std::endl;
         return;

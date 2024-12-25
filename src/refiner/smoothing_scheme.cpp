@@ -5,7 +5,8 @@ SmoothingScheme::SmoothingScheme(const std::set<int> &elem_smooth,
                                  std::vector<std::vector<double>> &coordinates,
                                  std::vector<int> &matid_arr,
                                  std::map<std::set<int>, std::vector<int>> &face_to_elems,
-                                 std::map<int, std::vector<std::set<int>>> &node_to_faces)
+                                 std::map<int, std::vector<std::set<int>>> &node_to_faces,
+                                 std::vector<std::vector<int>> &adj_elems)
 {
     std::cout << "smoothing constructor" << std::endl;
     std::vector<std::vector<int>> connectivity_tmp(connectivity.size(), std::vector<int>(4));
@@ -21,6 +22,10 @@ SmoothingScheme::SmoothingScheme(const std::set<int> &elem_smooth,
     m_connectivity = connectivity_tmp;
     m_coordinates = coordinates_tmp;
     for (int elem_id : elem_smooth) {
+        if (elem_id == 130228)
+        {
+            std::cout << "130228 detected" << std::endl;
+        }
         m_elem_smooth.push_back(elem_id);
     }
     for (int ielem = 0; ielem < connectivity.size(); ielem++) {
@@ -28,6 +33,7 @@ SmoothingScheme::SmoothingScheme(const std::set<int> &elem_smooth,
     }
     m_node_to_faces = node_to_faces;
     m_face_to_elems = face_to_elems;
+    m_adj_elements = adj_elems;
 }
 
 SmoothingScheme::~SmoothingScheme()
@@ -85,6 +91,24 @@ void SmoothingScheme::fetchNodes()
         for (int inode=0; inode<4; ++inode)
         {
             m_node_smooth.insert(m_connectivity[elem][inode]);
+            if (elem > 130000 && elem < 13500)
+            {
+                std::cout << elem << std::endl;
+                std::cout << m_connectivity[elem][inode] << std::endl;
+            }
+        }
+        
+        std::vector<int> adj_elems = m_adj_elements[elem];
+        for (int jelem=0; jelem<4; ++jelem)
+        {
+            int adj_elem = adj_elems[jelem];
+            if (adj_elem != -1)
+            {
+                for (int inode=0; inode<4; ++inode)
+            {
+                m_node_smooth.insert(m_connectivity[adj_elem][inode]);
+            }
+            }
         }
     }
 }

@@ -18,7 +18,8 @@ public: // public member function
                     std::vector<std::vector<double>> &coordinates,
                     std::vector<int> &matid_arr,
                     std::map<std::set<int>, std::vector<int>> &face_to_elems,
-                    std::map<int, std::vector<std::set<int>>> &node_to_faces);
+                    std::map<int, std::vector<std::set<int>>> &node_to_faces,
+                    std::vector<std::vector<int>> &adj_elems);
     ~SmoothingScheme();
 
     void executeSmoothing(std::vector<std::vector<int>> &new_conn, 

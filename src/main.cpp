@@ -8,7 +8,7 @@
 
 int main() 
 {
-    std::string data_dir("/data6/itou/AFEM/data/analysis_result_iburi_2km/");
+    std::string data_dir("/data6/itou/AFEM/data/analysis_result_iburi_large/");
     //ErrorEstimator error_estimator(data_dir);
 
 
