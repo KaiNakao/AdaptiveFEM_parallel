@@ -8,8 +8,8 @@
 
 int main() 
 {
-    std::string data_dir("/data6/itou/AFEM/data/analysis_result_iburi_large/");
-    // ErrorEstimator error_estimator(data_dir);
+    std::string data_dir("/data6/itou/AFEM/data/analysis_result_iburi_2km/");
+    ErrorEstimator error_estimator(data_dir);
 
 
     Refiner refiner = Refiner(data_dir);

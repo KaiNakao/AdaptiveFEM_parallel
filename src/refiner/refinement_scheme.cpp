@@ -83,43 +83,44 @@ void Refinement_scheme::executeRefinement_bisect(std::vector<std::vector<int>> &
                 face_nodes.push_back(tet_nodes.at((iface + inode + 1) % 4));
             }
             // face.marked_edge
-            double longest = 0.;
-            int idx1, idx2;
+            // double longest = 0.;
+            std::tuple<double, int, int> longest;
+            longest = std::make_tuple(0., -1, -1);
             for (int iedge = 0; iedge < 3; iedge++) {
-                int idx1_tmp = face_nodes.at(iedge);
-                int idx2_tmp = face_nodes.at((iedge + 1) % 3);
-                std::vector<double> p1 = m_coor_map.at(idx1_tmp), p2 = m_coor_map.at(idx2_tmp);
-                double length = findLength(p1, p2);
+                std::vector<int> edge_arr;
+                edge_arr.push_back(face_nodes.at(iedge));
+                edge_arr.push_back(face_nodes.at((iedge + 1) % 3));
+                std::sort(edge_arr.begin(), edge_arr.end());
+                int idx1 = edge_arr.at(0);
+                int idx2 = edge_arr.at(1);
+                std::vector<double> p1 = m_coor_map.at(idx1), p2 = m_coor_map.at(idx2);
+                // double length = findLength(p1, p2);
+                std::tuple<double, int, int> length = std::make_tuple(findLength(p1, p2), idx1, idx2);
                 if (length > longest) {
                     longest = length;
-                    idx1 = idx1_tmp;
-                    idx2 = idx2_tmp;
                 }
             }
-            face.marked_edge.nodes.insert(idx1);
-            face.marked_edge.nodes.insert(idx2);
+            face.marked_edge.nodes.insert(std::get<1>(longest));
+            face.marked_edge.nodes.insert(std::get<2>(longest));
             tet.faces.push_back(face);
         }
         // tet.refinement_edge
-        double longest = 0.;
-        int idx1, idx2;
+        std::tuple<double, int, int> longest;
         for (const auto &face : tet.faces) {
             std::vector<int> edge_nodes;
             for (int inode : face.marked_edge.nodes) {
                 edge_nodes.push_back(inode);
             }
-            int idx1_tmp = edge_nodes.at(0);
-            int idx2_tmp = edge_nodes.at(1);
-            std::vector<double> p1 = m_coor_map.at(idx1_tmp), p2 = m_coor_map.at(idx2_tmp);
-            double length = findLength(p1, p2);
+            std::sort(edge_nodes.begin(), edge_nodes.end());
+            int idx1 = edge_nodes.at(0), idx2 = edge_nodes.at(1);
+            std::vector<double> p1 = m_coor_map.at(idx1), p2 = m_coor_map.at(idx2);
+            std::tuple<double, int, int> length = std::make_tuple(findLength(p1, p2), idx1, idx2);
             if (length > longest) {
                 longest = length;
-                idx1 = idx1_tmp;
-                idx2 = idx2_tmp;
             }
         }
-        tet.refinement_edge.nodes.insert(idx1);
-        tet.refinement_edge.nodes.insert(idx2);
+        tet.refinement_edge.nodes.insert(std::get<1>(longest));
+        tet.refinement_edge.nodes.insert(std::get<2>(longest));
         // tet.flag
         tet.flag = false;
         // tet.material
@@ -167,6 +168,59 @@ void Refinement_scheme::executeRefinement_bisect(std::vector<std::vector<int>> &
             original[ielem] = 0;
         }
         ielem += 1;
+    }
+
+    m_face_to_elems.clear();
+    for (int elem_id = 0; elem_id < new_conn.size(); elem_id++) {
+        std::vector<int> &elem = new_conn[elem_id];
+        for (int iface = 0; iface < 4; iface++) {
+            std::set<int> face;
+            for (int inode = 0; inode < 3; inode++) {
+                face.insert(elem[(iface + inode + 1) % 4]);
+            }
+            m_face_to_elems[face].push_back(elem_id);
+        }
+    }
+    for (const auto &p : m_face_to_elems) {
+        const auto &face = p.first;
+        if (p.second.size() > 2) {
+            std::cout << "ERROR: face_to_elems more than 2" << std::endl;
+            std::cout << "face: ";
+            for (int inode : face) {
+                std::cout << inode << " ";
+            }
+            std::cout << std::endl; 
+            std::cout << "elems: ";
+            for (int elem_id : p.second) {
+                std::cout << elem_id << " ";
+            }
+            std::cout << std::endl;
+            std::exit(1);
+        }
+        if (p.second.size() == 2) {
+            continue;
+        }
+        std::cout << "boundary face: " << std::endl;
+        std::vector<std::vector<double>> tri;
+        for (int inode : face) {
+            tri.push_back(m_coor_map[inode]);
+        }
+        std::vector<double> center(3);
+        for (int idim = 0; idim < 3; idim++) {
+            center[idim] = (tri[0][idim] + tri[1][idim] + tri[2][idim]) / 3.0;
+        }
+        std::cout << "  center: ";
+        for (int idim = 0; idim < 3; idim++) {
+            std::cout << center[idim] << " ";
+        }
+        std::cout << std::endl;
+        std::cout << "  coor: ";
+        for (int inode : face) {
+            for (int idim = 0; idim < 3; idim++) {
+                std::cout << m_coor_map[inode][idim] << " ";
+            }
+            std::cout << std::endl;
+        }
     }
 }
 

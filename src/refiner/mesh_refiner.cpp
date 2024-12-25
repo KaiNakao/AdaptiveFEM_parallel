@@ -185,6 +185,16 @@ void Refiner::executeRefinement()
     }
     ofs.close();
 
+    ofs.open(m_data_dir + "new_original.bin", std::ios::binary);
+    if (!ofs) {
+        std::cerr << "Error opening file for new_original" << std::endl;
+        return;
+    }
+    for (int ielem = 0; ielem < original.size(); ielem++) {
+        ofs.write(reinterpret_cast<const char*>(&original[ielem]), sizeof(int));
+    }
+    ofs.close();
+
     //output aspect ratio
     ofs.open(m_data_dir + "aspect_ratio.bin", std::ios::binary);
     if (!ofs) {
@@ -201,6 +211,7 @@ void Refiner::executeRefinement()
         ofs.write(reinterpret_cast<const char*>(&aspect_ratio), sizeof(double));
     }
     ofs.close();
+
 }
 
 int Refiner::switchScheme(int _elem_id)

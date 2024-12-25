@@ -34,4 +34,4 @@ function main(data_dir)
     end
 end 
 
-main("/data6/itou/AFEM/data/analysis_result_iburi_large/")
+main("/data6/itou/AFEM/data/analysis_result_iburi_2km/")
