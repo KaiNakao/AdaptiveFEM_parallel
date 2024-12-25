@@ -56,7 +56,7 @@ void SmoothingScheme::executeSmoothing(std::vector<std::vector<int>> &new_conn,
             std::cout << iter << " " <<"max_aspect_ratio: " << max_aspect_ratio;
             std::cout << " total distance: " << euclidian_norm << std::endl;
         }
-        if (fabs(prev_norm - euclidian_norm) < 5)
+        if (max_aspect_ratio > prev_aspect_ratio)
         {
             break;
         }
@@ -131,7 +131,7 @@ void SmoothingScheme::moveNodes()
             moving_direction = calculateMovingDirection(inode);
             for (int idim=0; idim<3; ++idim)
             {
-              std::cout << "mv " << moving_direction[idim] << std::endl;
+              //std::cout << "mv " << moving_direction[idim] << std::endl;
               new_coordinates[inode][idim] += lmd * moving_direction[idim];
             }
             //new_coordinates[inode][2] += lmd * moving_direction[2];

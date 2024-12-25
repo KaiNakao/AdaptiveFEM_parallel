@@ -118,7 +118,7 @@ function write_tmp()
     end
 end
 
-write_mesh("/data6/itou/AFEM/data/analysis_result_iburi_large/")
+write_mesh("/data6/itou/AFEM/data/analysis_result_iburi_2km/")
 println("------------")
-write_new_mesh("/data6/itou/AFEM/data/analysis_result_iburi_large/")
+write_new_mesh("/data6/itou/AFEM/data/analysis_result_iburi_2km/")
 # write_tmp()
