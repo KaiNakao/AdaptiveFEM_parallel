@@ -48,9 +48,12 @@ end
 function write_new_mesh(data_dir)
     cny = reshape(reinterpret(Int32, read(data_dir * "new_connectivity.bin")), (5, :))
     material = cny[5, :]
-    aspect_ratio = reshape(reinterpret(Float64, read(data_dir * "new_aspect_ratio.bin")), (1, :))
     cny = cny[1:4, :]
     coor = reshape(reinterpret(Float64, read(data_dir * "new_coordinates.bin")), (3, :))
+    aspect_ratio = reshape(reinterpret(Float64, read(data_dir * "new_aspectratio.bin")), (1, :))
+    original = reshape(reinterpret(Int32, read(data_dir * "new_original.bin")), (1, :))
+    node_id = 0:size(coor, 2) - 1
+    elem_id = 0:size(cny, 2) - 1
     # eta = reshape(reinterpret(Float64, read(data_dir * "eta_quad.bin")), (1, :))
     # displacement = reshape(reinterpret(Float64, read(data_dir * "displacement_quad.bin")), (3, :))
     # marked_elem = reshape(reinterpret(Int32, read(data_dir * "marked_elem_quad.bin")), (1, :))
@@ -61,6 +64,7 @@ function write_new_mesh(data_dir)
     # @show size(cny)
     # @show size(eta)
     # @show size(displacement)
+    @show size(aspect_ratio)
     @show "number of element: ", size(cny, 2)
     @show "number of nodes: ", size(coor, 2)
     
@@ -84,7 +88,10 @@ function write_new_mesh(data_dir)
     vtk_grid("./new_mesh", coor, cells) do vtk
         vtk["new_elem"] = new_elem
         vtk["material"] = material
-        vtk["aspect_ratio"] = aspect_ratio
+        vtk["aspect_ratio"] = aspect_ratio[1, :]
+        vtk["original"] = original
+        vtk["node_id"] = node_id
+        vtk["elem_id"] = elem_id
     end
 end
 
