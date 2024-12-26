@@ -21,16 +21,30 @@
 !hdata_to_cdatamdata/*.hpp
 !hdata_to_cdatamdata/*.sh
 
-# !hdf5_to_hdata/*.sh
-# !hdf5_to_hdata/*.c
-# !hdf5_to_hdata/*.cpp
+!hdf5_to_hdata/*.c
+!hdf5_to_hdata/*.cpp
+!hdf5_to_hdata/*.sh
 
-# !src/*.cpp
-# !src/*.hpp
-# !src/*/*.cpp
-# !src/*/*.hpp
-# !src/*/*.md
-# !/Makefile
-# !.gitignore
-# !write_mesh.jl
-# !write_hdf5.jl
+!hdf5_to_surf/*.sh
+!hdf5_to_surf/*.c
+!hdf5_to_surf/*.F90
+
+!hdf5-1.10.7_lib_intel/include/*
+!hdf5-1.10.7_lib_intel/lib/*
+
+!merge_local_result/*.jl
+
+!metis_lib_intel_64bit/include/*
+!metis_lib_intel_64bit/lib/*
+
+!refiner/src/*.cpp
+!refiner/src/*.hpp
+!refiner/*.jl
+!refiner/Makefile
+
+!src_analysis_pointload/*.F
+!src_analysis_pointload/*.F90
+!src_analysis_pointload/*.c
+!src_analysis_pointload/Makefile
+
+!work/*.sh
