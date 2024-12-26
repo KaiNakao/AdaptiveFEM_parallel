@@ -1,11 +1,36 @@
 *
 !*/
-!src/*.cpp
-!src/*.hpp
-!src/*/*.cpp
-!src/*/*.hpp
-!src/*/*.md
-!/Makefile
-!.gitignore
-!write_mesh.jl
-!write_hdf5.jl
+
+!coord_trans/*
+
+!dem_to_hdf5/*.sh
+!dem_to_hdf5/*.F
+!dem_to_hdf5/*.c
+
+!gen_surf_mesh/*.sh
+!gen_surf_mesh/*.c
+!gen_surf_mesh/*.cpp
+
+!gsigeo2011_ver2_1_asc/program/gsigeome_asc
+!gsigeo2011_ver2_1_asc/program/gsigeo2011_ver2_1.asc
+
+!hdata_to_cdatamdata/*.F
+!hdata_to_cdatamdata/*.f
+!hdata_to_cdatamdata/*.c
+!hdata_to_cdatamdata/*.cpp
+!hdata_to_cdatamdata/*.hpp
+!hdata_to_cdatamdata/*.sh
+
+# !hdf5_to_hdata/*.sh
+# !hdf5_to_hdata/*.c
+# !hdf5_to_hdata/*.cpp
+
+# !src/*.cpp
+# !src/*.hpp
+# !src/*/*.cpp
+# !src/*/*.hpp
+# !src/*/*.md
+# !/Makefile
+# !.gitignore
+# !write_mesh.jl
+# !write_hdf5.jl
