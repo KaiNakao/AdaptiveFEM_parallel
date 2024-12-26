@@ -32,6 +32,8 @@
 !hdf5-1.10.7_lib_intel/include/*
 !hdf5-1.10.7_lib_intel/lib/*
 
+!jivsm/material.dat
+
 !merge_local_result/*.jl
 
 !metis_lib_intel_64bit/include/*
@@ -48,3 +50,6 @@
 !src_analysis_pointload/Makefile
 
 !work/*.sh
+
+!/.gitignore
+!/README.md
