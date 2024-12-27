@@ -15,8 +15,6 @@ subroutine pointload(myid, nnode, coor, nelem, cny3d, ni, rv)
                         l0, l1, l2, l3, nvec(10), ftmp(30)
     character(len=100) :: filename
 
-    print *, "pointload!!"
-
     if (myid == 0) then
         open(10, file="data/pointload.dat", status="old")
         read(10, *) 
@@ -30,7 +28,6 @@ subroutine pointload(myid, nnode, coor, nelem, cny3d, ni, rv)
     call mpi_bcast(ey, 1, mpi_double_precision, 0, mpi_comm_world, ierr)
     call mpi_bcast(ez, 1, mpi_double_precision, 0, mpi_comm_world, ierr)
 
-    print *, "x, y, ex, ey, ez:", x, y, ex, ey, ez
     load_point(1) = x
     load_point(2) = y
     load_direction(1) = ex
@@ -41,7 +38,6 @@ subroutine pointload(myid, nnode, coor, nelem, cny3d, ni, rv)
     open(10, file=filename, status="old")
     read(10, *) surf_nelem
     close(10)
-    print *, "number of elements:", surf_nelem
 
     allocate(surf_cny(4, surf_nelem))
 
@@ -49,7 +45,6 @@ subroutine pointload(myid, nnode, coor, nelem, cny3d, ni, rv)
     load_elem_arr = 0
     if (surf_nelem > 0) then
         write(filename, '("surf_mesh/", I6.6, "_cny.bin")') myid
-        print *, "filename: ", filename
         open(10, file=filename, status="old", access="stream", form="unformatted")
         read(10) surf_cny
         close(10)
@@ -80,10 +75,6 @@ subroutine pointload(myid, nnode, coor, nelem, cny3d, ni, rv)
             r1 = drdx(1, 1) * dx(1) + drdx(1, 2) * dx(2)
             r2 = drdx(2, 1) * dx(1) + drdx(2, 2) * dx(2)
 
-            if (myid == 6 .and. elem_id == 4286) then
-                print *, "6(4286) r1, r2: ", r1, r2
-            end if
-
             if (-1d-8 <= r1 .and. r1 <= 1d0 + 1d-8 .and. -1d-8 <= r2 .and. r2 <= 1d0 + 1d-8.and. r1 + r2 <= 1d0 + 1d-8) then
                 print *, "element found: ", elem_id
                 if (found == 0) then
@@ -101,11 +92,9 @@ subroutine pointload(myid, nnode, coor, nelem, cny3d, ni, rv)
                 load_point_proj(3) = xnode(3, 1) + r1 * dx3d(3, 1) + r2 * dx3d(3, 2)
 
                 print *, "load point projection: ", load_point_proj
-                print *, "load point: ", load_point
                 load_elem = elem_id
 
                 load_elem_arr(elem_id) = 1
-                print *, "load_elem: ", load_elem
             end if
         end do
     end if
@@ -181,7 +170,9 @@ subroutine pointload(myid, nnode, coor, nelem, cny3d, ni, rv)
     end if
 
     call mpi_allreduce(found, found_cnt, 1, mpi_integer, mpi_sum, mpi_comm_world, ierr)
-    print *, "found_cnt: ", found_cnt
+    if (myid == 0) then
+        print *, "number of process that found load element: ", found_cnt
+    end if
     rv = rv / found_cnt
 
     ! output load_elem_arr
