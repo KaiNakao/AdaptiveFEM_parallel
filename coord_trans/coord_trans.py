@@ -154,6 +154,11 @@ for i in range(nlayer):
     layers_new[i][:, 1] -= ymin
     layers_new[i][:, 2] -= zmin
 
+# deletion layer 13
+for i in range(layers_new[14].shape[0]):
+    layers_new[13][i, 2] = layers_new[12][i, 2]
+
+
 # output
 for i in range(nlayer):
     filename = "data/sur" + str(i+1).zfill(4) + ".dat"

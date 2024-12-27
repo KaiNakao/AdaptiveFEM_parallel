@@ -130,6 +130,8 @@ void Refiner::executeRefinement()
         ofs.write(reinterpret_cast<const char*>(&aspect_ratio), sizeof(double));
     }
     ofs.close();
+    std::cout << "smoothing completed" << std::endl;
+
     // 2. DO mesh refinement
     Refinement_scheme refinement_scheme = Refinement_scheme(m_elem_refine, tmp_connectivity, 
                                                             tmp_coordinates, m_matid_arr, 
@@ -156,27 +158,15 @@ void Refiner::executeRefinement()
         ofs.write(reinterpret_cast<const char*>(&aspect_ratio), sizeof(double));
     }
     ofs.close();
-
-    std::cout << "original - 130228 " << original[130228] << std::endl;
+    std::cout << "refinement completed" << std::endl;
 
     // 3. Do smoothing w.r.t. new elements
     std::set<int> elem_resmooth;
     for (int ielem=0; ielem<original.size(); ielem++)
     {
-        if (ielem == 130228)
-        {
-            std::cout << "130228 detected" << std::endl;
-            std::cout << original[ielem] << std::endl;
-        }
         if (original[ielem] == 0)
         {
             elem_resmooth.insert(ielem);
-        }
-    }
-    for (int elem_id : elem_resmooth) {
-        if (elem_id == 130228)
-        {
-            std::cout << "130228 detected in elem_resmooth" << std::endl;
         }
     }
     std::vector<std::vector<int>> new_adj_elements(new_connectivity.size(), std::vector<int>(4));

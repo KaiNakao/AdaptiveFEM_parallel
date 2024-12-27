@@ -14,7 +14,7 @@ function write_mesh(data_dir)
     load_elem = reshape(reinterpret(Int32, read(data_dir * "load_elem.bin")), (1, :))
     surf_elem = reshape(reinterpret(Int32, read(data_dir * "surf_elem.bin")), (1, :))
     partition = reshape(reinterpret(Int32, read(data_dir * "partition.bin")), (1, :))
-    aspect_ratio = reshape(reinterpret(Float64, read(data_dir * "aspect_ratio.bin")), (1, :))
+    aspect_ratio = reshape(reinterpret(Float64, read(data_dir * "aspect_ratio_0.bin")), (1, :))
     @show size(coor)
     @show size(cny)
     # @show size(eta)
@@ -30,7 +30,7 @@ function write_mesh(data_dir)
     # cells = [MeshCell(VTKCellTypes.VTK_QUADRATIC_TETRA, cny[:, i]) for i = 1:size(cny, 2)]
     cells = [MeshCell(VTKCellTypes.VTK_TETRA, cny[:, i]) for i = 1:size(cny, 2)]
 
-    vtk_grid("./mesh", coor, cells) do vtk
+    vtk_grid("../tmp/result/vtu/mesh", coor, cells) do vtk
         vtk["eta"] = eta[1, :]
         vtk["material"] = material
         # vtk["displacement_x"] = displacement[1, :]
@@ -85,7 +85,7 @@ function write_new_mesh(data_dir)
     cells = [MeshCell(VTKCellTypes.VTK_TETRA, cny[:, i]) for i = 1:size(cny, 2)]
 
 
-    vtk_grid("./new_mesh", coor, cells) do vtk
+    vtk_grid("../tmp/result/vtu/new_mesh", coor, cells) do vtk
         vtk["new_elem"] = new_elem
         vtk["material"] = material
         vtk["aspect_ratio"] = aspect_ratio[1, :]
@@ -118,7 +118,9 @@ function write_tmp()
     end
 end
 
-write_mesh("/data6/itou/AFEM/data/analysis_result_iburi_2km/")
+write_mesh("../tmp/result/")
+#write_mesh("/data6/itou/AFEM/data/analysis_result_iburi_2km/")
 println("------------")
-write_new_mesh("/data6/itou/AFEM/data/analysis_result_iburi_2km/")
+write_new_mesh("../tmp/result/")
+#write_new_mesh("/data6/itou/AFEM/data/analysis_result_iburi_2km/")
 # write_tmp()
