@@ -15,37 +15,25 @@ else ifeq ($(NPC), 288)
 endif
 
 hostname = $(shell hostname)
-
-ifeq ($(hostname), ibis)
-  ##### path to libraries
-  CXX = icpc
-  CC = icc
-  FC = mpiifort
-  HDFPATH = ./lib/hdf5_lib
-  HDFPATH = /home/fujita/Softwares/hdf5-1.10.7/hdf5/
-  METISPATH = ./lib/metis_lib
-  METISPATH = /home/fujita/part1/lib/metis_lib/
-  METISPATH = /home/fujita/Softwares/metis-5.1.0_icc_64bit/metis-5.1.0_icc_64bit/
-  METISPATH = /home/fujita/Softwares/metis-5.1.0_icc_32bit/metis-5.1.0_icc_32bit/
-
-  ##### DEBUG
-  OPTLEV = -g -fopenmp -DOUTPUT_LOG
-  OPTF =  -mcmodel=large -i-dynamic -heap-arrays -zero -check -warn all
-  OPTF =  -check -warn all
-  OPTF =  -g -CB -traceback
-  OPTF =  -g -CB -traceback -mcmodel=large -i-dynamic -heap-arrays -zero -check -warn all
-  OPTF =  -g -CB -traceback -mcmodel=large -i-dynamic -heap-arrays -zero -check bound
-
-  ##### RELEASE
-  OPTLEV = -O3 -fopenmp
-  OPTF =  -mcmodel=large -heap-arrays -zero
-
-  OPTC =
-  OPTCPP =
-  # for linking fortran subroutines to c++ program
-  LINKFORT = -limf -lifcore -lifport -lifcoremt
+ifeq ($(findstring ibis, $(hostname)), ibis)
+	CXX = icpc
+	CC = icc
+	FC = mpiifort
+	HDFPATH = /home/fujita/Softwares/hdf5-1.10.7/hdf5/
+	METISPATH = /home/fujita/Softwares/metis-5.1.0_icc_64bit/metis-5.1.0_icc_64bit/
+	
+	# DEBUG
+	OPTLEV = -g -fopenmp -DOUTPUT_LOG
+	OPTF = -mcmodel=large -i-dynamic -heap-arrays -zero -check -warn all
+	
+	# RELEASE
+	OPTLEV = -O3 -fopenmp
+	OPTF = -mcmodel=large -heap-arrays -zero
+	
+	OPTC =
+	OPTCPP =
+	LINKFORT = -limf -lifcore -lifport -lifcoremt
 endif
-
 
 ifeq ($(findstring fn01sv, $(hostname)), fn01sv)
 #ifeq ($(findstring bmt4-ln, $(hostname)), bmt4-ln)
