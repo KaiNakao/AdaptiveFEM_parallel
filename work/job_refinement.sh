@@ -33,7 +33,14 @@ make
 cd ../tmp
 ../refiner/main
 
+mkdir result/vtu
+mkdir result/fig
+cd ../refiner
+julia write_mesh.jl
+julia fig_out.jl
+
 cd ../work
 cd ${WORKDIR}
-mv ../../tmp/* ./
-rmdir ../../tmp
+mv -f ../../tmp/* ./
+rm -rf   ../../tmp
+

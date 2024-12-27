@@ -39,8 +39,17 @@ void search_adj_element(const std::vector<std::vector<int>> &cny,
                         adj_elem[ielem][iface] = face_to_elems[face][i];
                     }
                 }
-            } 
+            }
             else {
+                if (face_to_elems[face].size() > 2) {
+                    std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
+                    for (int node : face)
+                    {
+                        std::cout << node << " ";
+                    }
+                    std::cout << " / elem " << ielem << std::endl;
+                    std::cout << std::endl;
+                }
                 adj_elem[ielem][iface] = -1;
             }
         }
