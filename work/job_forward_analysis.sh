@@ -16,7 +16,9 @@ cd ${PBS_O_WORKDIR}
 source /home/ap/intel_2021.1/oneapi/setvars.sh
 export OMP_NUM_THREADS=1
 export OMP_STACKSIZE=1G
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:../hdf5-1.10.7_lib_intel/lib
+export LD_LIBRARY_PATH=../hdf5-1.10.7_lib_intel/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=../metis_lib_intel_64bit/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=../metis-5.1.0_icc_32bit/lib:$LD_LIBRARY_PATH
 ulimit -s unlimited
 
 mkdir -p ../tmp

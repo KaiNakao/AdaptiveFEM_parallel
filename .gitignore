@@ -39,6 +39,9 @@
 !metis_lib_intel_64bit/include/*
 !metis_lib_intel_64bit/lib/*
 
+!metis-5.1.0_icc_32bit/include/*
+!metis-5.1.0_icc_32bit/lib/*
+
 !refiner/src/*.cpp
 !refiner/src/*.hpp
 !refiner/*.jl
