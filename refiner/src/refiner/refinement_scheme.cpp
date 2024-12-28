@@ -1,13 +1,16 @@
 #include "../inc/refinement_scheme.hpp"
-#include "../inc/geo_util.hpp"
-#include <iostream>
+
 #include <stdlib.h>
 
-Refinement_scheme::Refinement_scheme(const std::set<int> &elem_refine,
-                                     std::vector<std::vector<int>> &connectivity,
-                                     std::vector<std::vector<double>> &coordinates,
-                                     std::vector<int> &matid_arr,
-                                     std::map<std::set<int>, std::vector<int>> &face_to_elems) {
+#include <iostream>
+
+#include "../inc/geo_util.hpp"
+
+Refinement_scheme::Refinement_scheme(
+    const std::set<int> &elem_refine,
+    std::vector<std::vector<int>> &connectivity,
+    std::vector<std::vector<double>> &coordinates, std::vector<int> &matid_arr,
+    std::map<std::set<int>, std::vector<int>> &face_to_elems) {
     for (int ielem = 0; ielem < connectivity.size(); ielem++) {
         m_elems_in_mesh[ielem] = connectivity[ielem];
         m_matid_map[ielem] = matid_arr[ielem];
@@ -54,13 +57,12 @@ Refinement_scheme::Refinement_scheme(const std::set<int> &elem_refine,
     m_elem_refine = elem_refine;
 }
 
-Refinement_scheme::~Refinement_scheme() {
-}
+Refinement_scheme::~Refinement_scheme() {}
 
-void Refinement_scheme::executeRefinement_bisect(std::vector<std::vector<int>> &new_conn,
-                                                 std::vector<std::vector<double>> &new_coor,
-                                                 std::vector<int> &new_matid_arr, 
-                                                 std::vector<int> &original) {
+void Refinement_scheme::executeRefinement_bisect(
+    std::vector<std::vector<int>> &new_conn,
+    std::vector<std::vector<double>> &new_coor, std::vector<int> &new_matid_arr,
+    std::vector<int> &original) {
     std::cout << "executeRefinement_bisect" << std::endl;
 
     std::set<Tetrahedron> t, s;
@@ -93,9 +95,11 @@ void Refinement_scheme::executeRefinement_bisect(std::vector<std::vector<int>> &
                 std::sort(edge_arr.begin(), edge_arr.end());
                 int idx1 = edge_arr.at(0);
                 int idx2 = edge_arr.at(1);
-                std::vector<double> p1 = m_coor_map.at(idx1), p2 = m_coor_map.at(idx2);
+                std::vector<double> p1 = m_coor_map.at(idx1),
+                                    p2 = m_coor_map.at(idx2);
                 // double length = findLength(p1, p2);
-                std::tuple<double, int, int> length = std::make_tuple(findLength(p1, p2), idx1, idx2);
+                std::tuple<double, int, int> length =
+                    std::make_tuple(findLength(p1, p2), idx1, idx2);
                 if (length > longest) {
                     longest = length;
                 }
@@ -113,8 +117,10 @@ void Refinement_scheme::executeRefinement_bisect(std::vector<std::vector<int>> &
             }
             std::sort(edge_nodes.begin(), edge_nodes.end());
             int idx1 = edge_nodes.at(0), idx2 = edge_nodes.at(1);
-            std::vector<double> p1 = m_coor_map.at(idx1), p2 = m_coor_map.at(idx2);
-            std::tuple<double, int, int> length = std::make_tuple(findLength(p1, p2), idx1, idx2);
+            std::vector<double> p1 = m_coor_map.at(idx1),
+                                p2 = m_coor_map.at(idx2);
+            std::tuple<double, int, int> length =
+                std::make_tuple(findLength(p1, p2), idx1, idx2);
             if (length > longest) {
                 longest = length;
             }
@@ -189,7 +195,7 @@ void Refinement_scheme::executeRefinement_bisect(std::vector<std::vector<int>> &
             for (int inode : face) {
                 std::cout << inode << " ";
             }
-            std::cout << std::endl; 
+            std::cout << std::endl;
             std::cout << "elems: ";
             for (int elem_id : p.second) {
                 std::cout << elem_id << " ";
@@ -200,38 +206,42 @@ void Refinement_scheme::executeRefinement_bisect(std::vector<std::vector<int>> &
         if (p.second.size() == 2) {
             continue;
         }
-        std::cout << "boundary face: " << std::endl;
-        std::vector<std::vector<double>> tri;
-        for (int inode : face) {
-            tri.push_back(m_coor_map[inode]);
-        }
-        std::vector<double> center(3);
-        for (int idim = 0; idim < 3; idim++) {
-            center[idim] = (tri[0][idim] + tri[1][idim] + tri[2][idim]) / 3.0;
-        }
-        std::cout << "  center: ";
-        for (int idim = 0; idim < 3; idim++) {
-            std::cout << center[idim] << " ";
-        }
-        std::cout << std::endl;
-        std::cout << "  coor: ";
-        for (int inode : face) {
-            for (int idim = 0; idim < 3; idim++) {
-                std::cout << m_coor_map[inode][idim] << " ";
-            }
-            std::cout << std::endl;
-        }
+        // std::cout << "boundary face: " << std::endl;
+        // std::vector<std::vector<double>> tri;
+        // for (int inode : face) {
+        //     tri.push_back(m_coor_map[inode]);
+        // }
+        // std::vector<double> center(3);
+        // for (int idim = 0; idim < 3; idim++) {
+        //     center[idim] = (tri[0][idim] + tri[1][idim] + tri[2][idim])
+        //     / 3.0;
+        // }
+        // std::cout << "  center: ";
+        // for (int idim = 0; idim < 3; idim++) {
+        //     std::cout << center[idim] << " ";
+        // }
+        // std::cout << std::endl;
+        // std::cout << "  coor: ";
+        // for (int inode : face) {
+        //     for (int idim = 0; idim < 3; idim++) {
+        //         std::cout << m_coor_map[inode][idim] << " ";
+        //     }
+        //     std::cout << std::endl;
+        // }
     }
 }
 
-void Refinement_scheme::local_refine(std::set<Tetrahedron> &t, std::set<Tetrahedron> &s) {
+void Refinement_scheme::local_refine(std::set<Tetrahedron> &t,
+                                     std::set<Tetrahedron> &s) {
     std::map<Edge, int> edges_cut;
     bisect_tets(t, s, edges_cut);
     refine_to_conformity(t, s, edges_cut);
     return;
 }
 
-void Refinement_scheme::bisect_tets(std::set<Tetrahedron> &t, std::set<Tetrahedron> &s, std::map<Edge, int> &edges_cut) {
+void Refinement_scheme::bisect_tets(std::set<Tetrahedron> &t,
+                                    std::set<Tetrahedron> &s,
+                                    std::map<Edge, int> &edges_cut) {
     for (const Tetrahedron &tet : s) {
         bisect_tet(t, tet, edges_cut);
         // remove
@@ -256,19 +266,18 @@ int Refinement_scheme::find_tet_type(const Tetrahedron &tet) {
     if (cnt == 6) {
         if (nodes_all.size() == 3) {
             if (tet.flag) {
-                parent_type = 0; // Pftype
-            }
-            else {
-                parent_type = 1; // Putype
+                parent_type = 0;  // Pftype
+            } else {
+                parent_type = 1;  // Putype
             }
         } else {
-            parent_type = 2; // Atype
+            parent_type = 2;  // Atype
         }
     } else if (cnt == 5) {
-        parent_type = 3; // Mtype
+        parent_type = 3;  // Mtype
     } else if (cnt == 4) {
-        parent_type = 4; // Otype
-    } 
+        parent_type = 4;  // Otype
+    }
     if (parent_type == -1) {
         std::cout << "ERROR: tet type not found" << std::endl;
         std::cout << "cnt: " << cnt << std::endl;
@@ -278,7 +287,9 @@ int Refinement_scheme::find_tet_type(const Tetrahedron &tet) {
     return parent_type;
 }
 
-void Refinement_scheme::bisect_tet(std::set<Tetrahedron> &t, const Tetrahedron &tet, std::map<Edge, int> &edges_cut) {
+void Refinement_scheme::bisect_tet(std::set<Tetrahedron> &t,
+                                   const Tetrahedron &tet,
+                                   std::map<Edge, int> &edges_cut) {
     int parent_type = find_tet_type(tet);
     std::vector<int> nodes_refine_edge, nodes_opposite_edge;
     for (int node_id : tet.nodes) {
@@ -306,8 +317,7 @@ void Refinement_scheme::bisect_tet(std::set<Tetrahedron> &t, const Tetrahedron &
     int enode;
     if (edges_cut.count(tet.refinement_edge)) {
         enode = edges_cut.at(tet.refinement_edge);
-    }
-    else {
+    } else {
         enode = m_coor_map.size();
         edges_cut[tet.refinement_edge] = enode;
         m_coor_map[enode] = mid_point;
@@ -367,15 +377,13 @@ void Refinement_scheme::bisect_tet(std::set<Tetrahedron> &t, const Tetrahedron &
         face14.marked_edge.nodes.insert(enode);
         if (t1.refinement_edge.nodes.count(cnode)) {
             face14.marked_edge.nodes.insert(cnode);
-        } 
-        else {
+        } else {
             face14.marked_edge.nodes.insert(dnode);
         }
-    } 
-    else {
+    } else {
         face14.marked_edge.nodes = {cnode, dnode};
     }
-    t1.faces.push_back(face14);    
+    t1.faces.push_back(face14);
 
     face24.nodes = {enode, cnode, dnode};
     // Pftype
@@ -383,12 +391,10 @@ void Refinement_scheme::bisect_tet(std::set<Tetrahedron> &t, const Tetrahedron &
         face24.marked_edge.nodes.insert(enode);
         if (t2.refinement_edge.nodes.count(cnode)) {
             face24.marked_edge.nodes.insert(cnode);
-        } 
-        else {
+        } else {
             face24.marked_edge.nodes.insert(dnode);
         }
-    } 
-    else {
+    } else {
         face24.marked_edge.nodes = {cnode, dnode};
     }
     t2.faces.push_back(face24);
@@ -398,13 +404,12 @@ void Refinement_scheme::bisect_tet(std::set<Tetrahedron> &t, const Tetrahedron &
     if (parent_type == 1) {
         t1.flag = true;
         t2.flag = true;
-    }
-    else {
+    } else {
         t1.flag = false;
         t2.flag = false;
     }
 
-    // tet.material 
+    // tet.material
     t1.material = tet.material;
     t2.material = tet.material;
 
@@ -424,31 +429,33 @@ void Refinement_scheme::bisect_tet(std::set<Tetrahedron> &t, const Tetrahedron &
 
     // int t1_type = find_tet_type(t1), t2_type = find_tet_type(t2);
     // if (parent_type == 0 && (t1_type != 2 || t2_type != 2)) {
-    //     std::cout << "ERROR: Children of Pftype tetrahedra not Atype" << std::endl;
-    //     std::exit(1);
+    //     std::cout << "ERROR: Children of Pftype tetrahedra not Atype" <<
+    //     std::endl; std::exit(1);
     // }
     // if (parent_type == 1 && (t1_type != 0 || t2_type != 0)) {
-    //     std::cout << "ERROR: Children of Putype tetrahedra not Pftype" << std::endl;
-    //     std::exit(1);
+    //     std::cout << "ERROR: Children of Putype tetrahedra not Pftype" <<
+    //     std::endl; std::exit(1);
     // }
     // if (parent_type == 2 && (t1_type != 1 || t2_type != 1)) {
-    //     std::cout << "ERROR: Children of Atype tetrahedra not Putype" << std::endl;
-    //     std::exit(1);
+    //     std::cout << "ERROR: Children of Atype tetrahedra not Putype" <<
+    //     std::endl; std::exit(1);
     // }
     // if (parent_type == 3 && (t1_type != 1 || t2_type != 1)) {
-    //     std::cout << "ERROR: Children of Mtype tetrahedra not Putype" << std::endl;
-    //     std::exit(1);
+    //     std::cout << "ERROR: Children of Mtype tetrahedra not Putype" <<
+    //     std::endl; std::exit(1);
     // }
     // if (parent_type == 4 && (t1_type != 1 || t2_type != 1)) {
-    //     std::cout << "ERROR: Children of Otype tetrahedra not Putype" << std::endl;
-    //     std::exit(1);
+    //     std::cout << "ERROR: Children of Otype tetrahedra not Putype" <<
+    //     std::endl; std::exit(1);
     // }
 }
 
-void Refinement_scheme::refine_to_conformity(std::set<Tetrahedron> &t, std::set<Tetrahedron> &s, std::map<Edge, int> &edges_cut) {
+void Refinement_scheme::refine_to_conformity(std::set<Tetrahedron> &t,
+                                             std::set<Tetrahedron> &s,
+                                             std::map<Edge, int> &edges_cut) {
     // check hanging nodes
     for (const auto &tet : t) {
-        std::vector<int> tet_nodes(tet.nodes.begin(), tet.nodes.end());   
+        std::vector<int> tet_nodes(tet.nodes.begin(), tet.nodes.end());
         std::set<Edge> edges;
         Edge edge1, edge2, edge3, edge4, edge5, edge6;
         edge1.nodes = {tet_nodes[0], tet_nodes[1]};
@@ -465,20 +472,21 @@ void Refinement_scheme::refine_to_conformity(std::set<Tetrahedron> &t, std::set<
         }
     }
 
-    std::cout << "number of elements with hanging nodes: " << s.size() << std::endl;
+    std::cout << "number of elements with hanging nodes: " << s.size()
+              << std::endl;
 
     if (s.size() == 0) {
         return;
-    }
-    else {
+    } else {
         bisect_tets(t, s, edges_cut);
         refine_to_conformity(t, s, edges_cut);
     }
 }
 
-void Refinement_scheme::executeRefinement(std::vector<std::vector<int>> &new_conn, 
-                                          std::vector<std::vector<double>> &new_coor,
-                                          std::vector<int> &new_matid_arr) {
+void Refinement_scheme::executeRefinement(
+    std::vector<std::vector<int>> &new_conn,
+    std::vector<std::vector<double>> &new_coor,
+    std::vector<int> &new_matid_arr) {
     std::cout << "executeRefinement" << std::endl;
     std::cout << "m_points.size(): " << m_points.size() << std::endl;
     for (int ipoint = 0; ipoint < m_points.size(); ipoint++) {
@@ -492,10 +500,12 @@ void Refinement_scheme::executeRefinement(std::vector<std::vector<int>> &new_con
             for (int inode = 0; inode < 4; inode++) {
                 tetra[inode] = m_coor_map[m_elems_in_mesh[ielem][inode]];
             }
-            std::vector<double> r_loc = normalizeLocTetra(tetra, m_points[ipoint]);
+            std::vector<double> r_loc =
+                normalizeLocTetra(tetra, m_points[ipoint]);
 
             double r1 = r_loc[0], r2 = r_loc[1], r3 = r_loc[2];
-            if (r1 >= -1e-8 && r2 >= -1e-8 && r3 >= -1e-8 && r1 + r2 + r3 <= 1.0 + 1e-8) {
+            if (r1 >= -1e-8 && r2 >= -1e-8 && r3 >= -1e-8 &&
+                r1 + r2 + r3 <= 1.0 + 1e-8) {
                 elems_containing_point.push_back(ielem);
             }
         }
@@ -508,13 +518,15 @@ void Refinement_scheme::executeRefinement(std::vector<std::vector<int>> &new_con
         std::set<int> elems_for_flip;
         for (int ielem = 0; ielem < elems_containing_point.size(); ielem++) {
             int elem_id = elems_containing_point[ielem];
-            split14(elems_containing_point[ielem], m_points[ipoint], elems_for_flip);
+            split14(elems_containing_point[ielem], m_points[ipoint],
+                    elems_for_flip);
         }
 
         for (int elem_id : elems_for_flip) {
             performFlip(elem_id);
         }
-        std::cout << "number of elements: " << m_elems_in_mesh.size() << std::endl;
+        std::cout << "number of elements: " << m_elems_in_mesh.size()
+                  << std::endl;
     }
 
     // for (const auto &p : m_face_to_elems) {
@@ -529,7 +541,8 @@ void Refinement_scheme::executeRefinement(std::vector<std::vector<int>> &new_con
     //     }
     //     std::vector<double> center(3);
     //     for (int idim = 0; idim < 3; idim++) {
-    //         center[idim] = (tri[0][idim] + tri[1][idim] + tri[2][idim]) / 3.0;
+    //         center[idim] = (tri[0][idim] + tri[1][idim] + tri[2][idim])
+    //         / 3.0;
     //     }
     //     if (fabs(center[0] < 1e-8) || fabs(center[0] - 340000) < 1e-8) {
     //         continue;
@@ -561,7 +574,7 @@ void Refinement_scheme::executeRefinement(std::vector<std::vector<int>> &new_con
     //         for (int inode : face) {
     //             std::cout << inode << " ";
     //         }
-    //         std::cout << std::endl; 
+    //         std::cout << std::endl;
     //         std::cout << "elems: ";
     //         for (int elem_id : p.second) {
     //             std::cout << elem_id << " ";
@@ -591,8 +604,8 @@ void Refinement_scheme::executeRefinement(std::vector<std::vector<int>> &new_con
 }
 
 // split root element into 4 tetras
-void Refinement_scheme::split14(int _tetra_id, std::vector<double> &_pt, std::set<int> &elems_for_flip)
-{
+void Refinement_scheme::split14(int _tetra_id, std::vector<double> &_pt,
+                                std::set<int> &elems_for_flip) {
     // Store root tetra
     std::vector<int> simplex = m_elems_in_mesh[_tetra_id];
 
@@ -627,7 +640,7 @@ void Refinement_scheme::split14(int _tetra_id, std::vector<double> &_pt, std::se
 
     for (int ielem = 0; ielem < 4; ielem++) {
         std::vector<int> &t = t_arr_all[ielem];
-        if (vol_arr_all[ielem]/mean_vol < 1e-8) {
+        if (vol_arr_all[ielem] / mean_vol < 1e-8) {
             faces_to_remove.push_back({t[0], t[1], t[2]});
             continue;
         }
@@ -670,7 +683,8 @@ void Refinement_scheme::split14(int _tetra_id, std::vector<double> &_pt, std::se
     for (const auto &t : t_arr) {
         std::set<int> face = {t[0], t[1], t[2]};
         std::vector<int> &elems = m_face_to_elems[face];
-        elems.erase(std::remove(elems.begin(), elems.end(), _tetra_id), elems.end());
+        elems.erase(std::remove(elems.begin(), elems.end(), _tetra_id),
+                    elems.end());
     }
     for (const auto &face : faces_to_remove) {
         m_face_to_elems.erase(face);
@@ -694,11 +708,9 @@ void Refinement_scheme::split14(int _tetra_id, std::vector<double> &_pt, std::se
     m_matid_map.erase(_tetra_id);
 }
 
-void Refinement_scheme::performFlip(int _elem_id)
-{
+void Refinement_scheme::performFlip(int _elem_id) {
     bool flippable = checkFlippable(_elem_id);
-    if (!flippable)
-    {
+    if (!flippable) {
         return;
     }
     std::set<int> elems_for_flip;
@@ -709,14 +721,11 @@ void Refinement_scheme::performFlip(int _elem_id)
 }
 
 // check if flippable
-bool Refinement_scheme::checkFlippable(int _o_tetra_id)
-{
-    if (_o_tetra_id == -1)
-    {
+bool Refinement_scheme::checkFlippable(int _o_tetra_id) {
+    if (_o_tetra_id == -1) {
         return false;
     }
-    if (m_elems_in_mesh.find(_o_tetra_id) == m_elems_in_mesh.end())
-    {
+    if (m_elems_in_mesh.find(_o_tetra_id) == m_elems_in_mesh.end()) {
         return false;
     }
     // Find paired tetra: newly added node is the last node in connectivity
@@ -725,9 +734,11 @@ bool Refinement_scheme::checkFlippable(int _o_tetra_id)
     if (m_face_to_elems[face].size() != 2) {
         return false;
     }
-    int p_tetra_id = m_face_to_elems[face][0] == _o_tetra_id ? m_face_to_elems[face][1] : m_face_to_elems[face][0];
+    int p_tetra_id = m_face_to_elems[face][0] == _o_tetra_id
+                         ? m_face_to_elems[face][1]
+                         : m_face_to_elems[face][0];
 
-    // material boundary 
+    // material boundary
     if (m_matid_map[_o_tetra_id] != m_matid_map[p_tetra_id]) {
         return false;
     }
@@ -737,20 +748,16 @@ bool Refinement_scheme::checkFlippable(int _o_tetra_id)
     int aid = findVertexPos(p_tetra_id, _o_tetra_id, 0);
     int bid = findVertexPos(p_tetra_id, _o_tetra_id, 1);
     int cid = findVertexPos(p_tetra_id, _o_tetra_id, 2);
-    int did = 6 - (aid+bid+cid);
+    int did = 6 - (aid + bid + cid);
     std::vector<std::vector<double>> o_tetra(4, std::vector<double>(3));
-    for (int i=0; i<4; ++i)
-    {
-        for (int j=0; j<3; ++j)
-        {
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 3; ++j) {
             o_tetra[i][j] = m_coor_map[simplex_o[i]][j];
         }
     }
     std::vector<std::vector<double>> p_tetra(4, std::vector<double>(3));
-    for (int i=0; i<4; ++i)
-    {
-        for (int j=0; j<3; ++j)
-        {
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 3; ++j) {
             p_tetra[i][j] = m_coor_map[simplex_p[i]][j];
         }
     }
@@ -762,8 +769,7 @@ bool Refinement_scheme::checkFlippable(int _o_tetra_id)
     tmp_tri[2] = o_tetra[2];
     tmp_pt1 = o_tetra[3];
     tmp_pt2 = p_tetra[did];
-    if (!checkConcave(tmp_tri, tmp_pt1, tmp_pt2))
-    {
+    if (!checkConcave(tmp_tri, tmp_pt1, tmp_pt2)) {
         return false;
     }
 
@@ -771,7 +777,8 @@ bool Refinement_scheme::checkFlippable(int _o_tetra_id)
     std::vector<double> d = p_tetra[did];
     std::vector<double> circum_center = findCircumCenter(o_tetra);
     double circum_radius = findCircumRadius(o_tetra);
-    if (findLength(circum_center, d) > circum_radius)  // temprally modified condition
+    if (findLength(circum_center, d) >
+        circum_radius)  // temprally modified condition
     {
         return false;
     }
@@ -779,19 +786,20 @@ bool Refinement_scheme::checkFlippable(int _o_tetra_id)
 }
 
 // find paired tetra and flip
-void Refinement_scheme::flip23(int _o_tetra_id, std::set<int> &elems_for_flip)
-{
+void Refinement_scheme::flip23(int _o_tetra_id, std::set<int> &elems_for_flip) {
     // Find paired tetra: newly added node is the last node in connectivity
     std::vector<int> simplex_o = m_elems_in_mesh[_o_tetra_id];
     std::set<int> face = {simplex_o[0], simplex_o[1], simplex_o[2]};
-    int p_tetra_id = m_face_to_elems[face][0] == _o_tetra_id ? m_face_to_elems[face][1] : m_face_to_elems[face][0];
+    int p_tetra_id = m_face_to_elems[face][0] == _o_tetra_id
+                         ? m_face_to_elems[face][1]
+                         : m_face_to_elems[face][0];
 
     // Fetch tetras to be flipped
     std::vector<int> simplex_p = m_elems_in_mesh[p_tetra_id];
     int aid = findVertexPos(p_tetra_id, _o_tetra_id, 0);
     int bid = findVertexPos(p_tetra_id, _o_tetra_id, 1);
     int cid = findVertexPos(p_tetra_id, _o_tetra_id, 2);
-    int did = 6 - (aid+bid+cid);
+    int did = 6 - (aid + bid + cid);
 
     // create new tetra
     std::vector<int> t1, t2, t3;
@@ -822,7 +830,7 @@ void Refinement_scheme::flip23(int _o_tetra_id, std::set<int> &elems_for_flip)
     // 4-4 flip
     for (int ielem = 0; ielem < 3; ielem++) {
         std::vector<int> &t = t_arr_all[ielem];
-        if (vol_arr_all[ielem]/mean_vol > 1e-8) {
+        if (vol_arr_all[ielem] / mean_vol > 1e-8) {
             continue;
         }
 
@@ -842,16 +850,18 @@ void Refinement_scheme::flip23(int _o_tetra_id, std::set<int> &elems_for_flip)
             // std::cout << "unflippable" << std::endl;
             return;
         }
-        
+
         faces_to_remove.push_back(p_face);
         faces_to_remove.push_back(o_face);
 
         if (p_elems.size() == 1 && o_elems.size() == 1) {
             continue;
-        } 
+        }
 
-        int q_tetra_id = p_elems.at(0) == p_tetra_id ? p_elems.at(1) : p_elems.at(0);
-        int r_tetra_id = o_elems.at(0) == _o_tetra_id ? o_elems.at(1) : o_elems.at(0);
+        int q_tetra_id =
+            p_elems.at(0) == p_tetra_id ? p_elems.at(1) : p_elems.at(0);
+        int r_tetra_id =
+            o_elems.at(0) == _o_tetra_id ? o_elems.at(1) : o_elems.at(0);
         if (m_matid_map[q_tetra_id] != m_matid_map[r_tetra_id]) {
             // std::cout << "unflippable" << std::endl;
             return;
@@ -859,7 +869,8 @@ void Refinement_scheme::flip23(int _o_tetra_id, std::set<int> &elems_for_flip)
         std::vector<int> simplex_q = m_elems_in_mesh[q_tetra_id];
         std::vector<int> simplex_r = m_elems_in_mesh[r_tetra_id];
         for (int inode = 0; inode < 3; inode++) {
-            if (std::find(simplex_q.begin(), simplex_q.end(), simplex_r[inode]) == simplex_q.end()) {
+            if (std::find(simplex_q.begin(), simplex_q.end(),
+                          simplex_r[inode]) == simplex_q.end()) {
                 // std::cout << "unflippable" << std::endl;
                 return;
             }
@@ -868,11 +879,12 @@ void Refinement_scheme::flip23(int _o_tetra_id, std::set<int> &elems_for_flip)
         int aid = findVertexPos(q_tetra_id, r_tetra_id, 0);
         int bid = findVertexPos(q_tetra_id, r_tetra_id, 1);
         int cid = findVertexPos(q_tetra_id, r_tetra_id, 2);
-        int did = 6 - (aid+bid+cid);
+        int did = 6 - (aid + bid + cid);
 
         int eid;
         for (int inode = 0; inode < 3; inode++) {
-            if (std::find(simplex_o.begin(), simplex_o.end(), simplex_r[inode]) == simplex_o.end()) {
+            if (std::find(simplex_o.begin(), simplex_o.end(),
+                          simplex_r[inode]) == simplex_o.end()) {
                 eid = inode;
                 break;
             }
@@ -895,10 +907,14 @@ void Refinement_scheme::flip23(int _o_tetra_id, std::set<int> &elems_for_flip)
             std::set<int> face;
             face = {t[0], t[1], t[2]};
             std::vector<int> &elems_q = m_face_to_elems[face];
-            elems_q.erase(std::remove(elems_q.begin(), elems_q.end(), q_tetra_id), elems_q.end());
+            elems_q.erase(
+                std::remove(elems_q.begin(), elems_q.end(), q_tetra_id),
+                elems_q.end());
             face = {t[0], t[1], t[3]};
             std::vector<int> &elems_r = m_face_to_elems[face];
-            elems_r.erase(std::remove(elems_r.begin(), elems_r.end(), r_tetra_id), elems_r.end());
+            elems_r.erase(
+                std::remove(elems_r.begin(), elems_r.end(), r_tetra_id),
+                elems_r.end());
         }
         std::cout << "flip(4) : " << q_tetra_id << " " << r_tetra_id << " -> ";
         for (int i = 0; i < t_id_arr_add.size(); i++) {
@@ -928,7 +944,7 @@ void Refinement_scheme::flip23(int _o_tetra_id, std::set<int> &elems_for_flip)
 
     for (int ielem = 0; ielem < 3; ielem++) {
         std::vector<int> &t = t_arr_all[ielem];
-        if (vol_arr_all[ielem]/mean_vol < 1e-8) {
+        if (vol_arr_all[ielem] / mean_vol < 1e-8) {
             continue;
         }
         int t_id = m_max_elem_id + 1;
@@ -952,11 +968,13 @@ void Refinement_scheme::flip23(int _o_tetra_id, std::set<int> &elems_for_flip)
         std::set<int> face;
         face = {t[0], t[1], t[2]};
         std::vector<int> &elems_p = m_face_to_elems[face];
-        elems_p.erase(std::remove(elems_p.begin(), elems_p.end(), p_tetra_id), elems_p.end());
+        elems_p.erase(std::remove(elems_p.begin(), elems_p.end(), p_tetra_id),
+                      elems_p.end());
 
         face = {t[0], t[1], t[3]};
         std::vector<int> &elems_o = m_face_to_elems[face];
-        elems_o.erase(std::remove(elems_o.begin(), elems_o.end(), _o_tetra_id), elems_o.end());
+        elems_o.erase(std::remove(elems_o.begin(), elems_o.end(), _o_tetra_id),
+                      elems_o.end());
     }
     for (const auto &face : faces_to_remove) {
         m_face_to_elems.erase(face);
@@ -981,16 +999,14 @@ void Refinement_scheme::flip23(int _o_tetra_id, std::set<int> &elems_for_flip)
     m_candidate_elems.erase(p_tetra_id);
     m_matid_map.erase(_o_tetra_id);
     m_matid_map.erase(p_tetra_id);
-    
 }
 
 // find position of vertex in _vert_pos in _known_tetra w.r.t _target_tetra
-int Refinement_scheme::findVertexPos(int _target_tetra, int _known_tetra, int _vert_pos)
-{
-    for (int i=0; i<4; ++i)
-    {
-        if (m_elems_in_mesh[_target_tetra][i] == m_elems_in_mesh[_known_tetra][_vert_pos])
-        {
+int Refinement_scheme::findVertexPos(int _target_tetra, int _known_tetra,
+                                     int _vert_pos) {
+    for (int i = 0; i < 4; ++i) {
+        if (m_elems_in_mesh[_target_tetra][i] ==
+            m_elems_in_mesh[_known_tetra][_vert_pos]) {
             return i;
         }
     }
@@ -998,23 +1014,31 @@ int Refinement_scheme::findVertexPos(int _target_tetra, int _known_tetra, int _v
     std::exit(1);
 }
 
-bool Refinement_scheme::checkConcave(const std::vector<std::vector<double>> &_tri,
-                                     const std::vector<double> &_pt1,
-                                     const std::vector<double> &_pt2) {
+bool Refinement_scheme::checkConcave(
+    const std::vector<std::vector<double>> &_tri,
+    const std::vector<double> &_pt1, const std::vector<double> &_pt2) {
     // find projection of _pt1-_pt2 on _tri
-    std::vector<double> v1 = {_tri[1][0] - _tri[0][0], _tri[1][1] - _tri[0][1], _tri[1][2] - _tri[0][2]};
-    std::vector<double> v2 = {_tri[2][0] - _tri[0][0], _tri[2][1] - _tri[0][1], _tri[2][2] - _tri[0][2]};
-    std::vector<double> nvec = {v1[1]*v2[2] - v1[2]*v2[1],
-                                v1[2]*v2[0] - v1[0]*v2[2],
-                                v1[0]*v2[1] - v1[1]*v2[0]};
-    double nnorm = sqrt(nvec[0]*nvec[0] + nvec[1]*nvec[1] + nvec[2]*nvec[2]);
-    nvec[0] /= nnorm; nvec[1] /= nnorm; nvec[2] /= nnorm;
+    std::vector<double> v1 = {_tri[1][0] - _tri[0][0], _tri[1][1] - _tri[0][1],
+                              _tri[1][2] - _tri[0][2]};
+    std::vector<double> v2 = {_tri[2][0] - _tri[0][0], _tri[2][1] - _tri[0][1],
+                              _tri[2][2] - _tri[0][2]};
+    std::vector<double> nvec = {v1[1] * v2[2] - v1[2] * v2[1],
+                                v1[2] * v2[0] - v1[0] * v2[2],
+                                v1[0] * v2[1] - v1[1] * v2[0]};
+    double nnorm =
+        sqrt(nvec[0] * nvec[0] + nvec[1] * nvec[1] + nvec[2] * nvec[2]);
+    nvec[0] /= nnorm;
+    nvec[1] /= nnorm;
+    nvec[2] /= nnorm;
 
-    double alpha = (nvec[0]*(_tri[0][0] - _pt1[0]) + nvec[1]*(_tri[0][1] - _pt1[1]) + nvec[2]*(_tri[0][2] - _pt1[2])) /
-                   (nvec[0]*(_pt2[0] - _pt1[0]) + nvec[1]*(_pt2[1] - _pt1[1]) + nvec[2]*(_pt2[2] - _pt1[2]));
-    std::vector<double> proj = {_pt1[0] + alpha*(_pt2[0] - _pt1[0]),
-                                _pt1[1] + alpha*(_pt2[1] - _pt1[1]),
-                                _pt1[2] + alpha*(_pt2[2] - _pt1[2])};
+    double alpha =
+        (nvec[0] * (_tri[0][0] - _pt1[0]) + nvec[1] * (_tri[0][1] - _pt1[1]) +
+         nvec[2] * (_tri[0][2] - _pt1[2])) /
+        (nvec[0] * (_pt2[0] - _pt1[0]) + nvec[1] * (_pt2[1] - _pt1[1]) +
+         nvec[2] * (_pt2[2] - _pt1[2]));
+    std::vector<double> proj = {_pt1[0] + alpha * (_pt2[0] - _pt1[0]),
+                                _pt1[1] + alpha * (_pt2[1] - _pt1[1]),
+                                _pt1[2] + alpha * (_pt2[2] - _pt1[2])};
 
     // check if proj is inside _tri
     std::vector<std::vector<double>> dxdr(2, std::vector<double>(2));
@@ -1022,19 +1046,19 @@ bool Refinement_scheme::checkConcave(const std::vector<std::vector<double>> &_tr
     dxdr[0][1] = _tri[2][0] - _tri[0][0];
     dxdr[1][0] = _tri[1][1] - _tri[0][1];
     dxdr[1][1] = _tri[2][1] - _tri[0][1];
-    double detj = dxdr[0][0]*dxdr[1][1] - dxdr[0][1]*dxdr[1][0];
+    double detj = dxdr[0][0] * dxdr[1][1] - dxdr[0][1] * dxdr[1][0];
     std::vector<std::vector<double>> drdx(2, std::vector<double>(2));
-    drdx[0][0] = dxdr[1][1]/detj;
-    drdx[0][1] = -dxdr[0][1]/detj;
-    drdx[1][0] = -dxdr[1][0]/detj;
-    drdx[1][1] = dxdr[0][0]/detj;
+    drdx[0][0] = dxdr[1][1] / detj;
+    drdx[0][1] = -dxdr[0][1] / detj;
+    drdx[1][0] = -dxdr[1][0] / detj;
+    drdx[1][1] = dxdr[0][0] / detj;
 
     std::vector<double> dx(2);
     dx[0] = proj[0] - _tri[0][0];
     dx[1] = proj[1] - _tri[0][1];
 
-    double r1 = drdx[0][0]*dx[0] + drdx[0][1]*dx[1];
-    double r2 = drdx[1][0]*dx[0] + drdx[1][1]*dx[1];
+    double r1 = drdx[0][0] * dx[0] + drdx[0][1] * dx[1];
+    double r2 = drdx[1][0] * dx[0] + drdx[1][1] * dx[1];
 
     if (r1 >= -1e-8 && r2 >= -1e-8 && r1 + r2 <= 1.0 + 1e-8) {
         return true;
@@ -1042,4 +1066,3 @@ bool Refinement_scheme::checkConcave(const std::vector<std::vector<double>> &_tr
         return false;
     }
 }
-

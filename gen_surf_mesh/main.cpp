@@ -40,12 +40,12 @@ bool is_on_surf(const std::set<int> &face,
         }
         if (cnt < 3) continue;
         std::set<int> face_idx{pos_arr[0], pos_arr[1], pos_arr[2]};
-        std::cout << "face_idx: ";
-        for (int idx : face_idx) {
-            std::cout << idx << " ";
-        }
+        // std::cout << "face_idx: ";
+        // for (int idx : face_idx) {
+        //     std::cout << idx << " ";
+        // }
 
-        std::cout << "(rank: " << rank << ")" << std::endl;
+        // std::cout << "(rank: " << rank << ")" << std::endl;
         if (neighbor_face_tmp.find(face_idx) != neighbor_face_tmp.end()) {
             return false;
         }
@@ -85,7 +85,7 @@ int main(int argc, char **argv) {
     std::ostringstream ss;
     ss << std::setw(6) << std::setfill('0') << myid;
     std::string filename = "mdata/" + ss.str() + ".data.h5";
-    std::cout << "filename: " << filename << std::endl;
+    // std::cout << "filename: " << filename << std::endl;
 
     hdf_open_file_(filename.c_str(), &fid);
     size = 3;
@@ -93,7 +93,7 @@ int main(int argc, char **argv) {
     hdf_read_int_array_(&fid, "/setting", settings, &size, &count);
     int nnode = settings[0];
     int nelem = settings[1];
-    std::cout << "nelem: " << nelem << std::endl;
+    // std::cout << "nelem: " << nelem << std::endl;
 
     size = 11 * nelem;
     std::vector<std::vector<int>> cny(nelem, std::vector<int>(10));
@@ -156,13 +156,13 @@ int main(int argc, char **argv) {
     }
     hdf_close_file_(&fid);
 
-    std::cout << "number of neighbor: " << nneighbor << std::endl;
-    std::cout << "neighbor rank: " << std::endl;
-    for (int ineighbor = 0; ineighbor < nneighbor; ineighbor++) {
-        int rank = neighbor_rank[ineighbor];
-        std::cout << rank << " ";
-    }
-    std::cout << std::endl;
+    // std::cout << "number of neighbor: " << nneighbor << std::endl;
+    // std::cout << "neighbor rank: " << std::endl;
+    // for (int ineighbor = 0; ineighbor < nneighbor; ineighbor++) {
+    //     int rank = neighbor_rank[ineighbor];
+    //     std::cout << rank << " ";
+    // }
+    // std::cout << std::endl;
 
     // read model domain
     double xmin, xmax, ymin, ymax, zmin;
@@ -308,50 +308,15 @@ int main(int argc, char **argv) {
     std::set<int> surf_nodes;
     for (auto p : face_to_elem) {
         std::set<int> face = p.first;
-        // if (face == std::set<int>{1011, 1103, 1004}) {
-        if (face == std::set<int>{905, 911, 1005}) {
-            std::cout << "face: ";
-            for (int node_id : face) {
-                std::cout << node_id << " ";
-            }
-            std::cout << std::endl;
-            std::cout << "nelem for face: " << p.second.size() << std::endl;
-            for (int elem_id : p.second) {
-                std::cout << elem_id << " ";
-            }
-            std::cout << std::endl;
-            std::cout << "is_on_domain_boundary: "
-                      << is_on_domain_boundary(face, coor, xmin, xmax, ymin,
-                                               ymax, zmin)
-                      << std::endl;
-            std::cout << "is_on_surf: "
-                      << is_on_surf(face, neighbor_map_arr, neighbor_face)
-                      << std::endl;
-        }
         std::vector<int> elems = p.second;
         if (elems.size() == 1) {
             if (is_on_domain_boundary(face, coor, xmin, xmax, ymin, ymax,
                                       zmin)) {
                 continue;
             }
-            // if (face == std::set<int>{2189, 1992, 2175}) {
-            //     std::cout << "face: ";
-            //     for (int node_id : face) {
-            //         std::cout << node_id << " ";
-            //     }
-            //     std::cout << std::endl;
-            //     std::cout << "here" << std::endl;
-            // }
 
             if (is_on_surf(face, neighbor_map_arr, neighbor_face)) {
                 for (int node_id : face) {
-                    // if (node_id == 1005) {
-                    //     std::cout << "node 1005" << std::endl;
-                    //     for (int node_id : face) {
-                    //         std::cout << node_id << " ";
-                    //     }
-                    //     std::cout << std::endl;
-                    // }
                     surf_nodes.insert(node_id);
                 }
             }
@@ -365,10 +330,6 @@ int main(int argc, char **argv) {
     //               << coor[inode][2] << std::endl;
     // }
     // std::cout << std::endl;
-
-    std::cout << "1011: " << surf_nodes.count(1011) << std::endl;
-    std::cout << "1103: " << surf_nodes.count(1103) << std::endl;
-    std::cout << "1004: " << surf_nodes.count(1004) << std::endl;
 
     // connectivity of surface nodes
     std::vector<std::vector<int>> surf_cny;
@@ -384,23 +345,6 @@ int main(int argc, char **argv) {
             }
         }
 
-        if (ielem == 4181) {
-            std::cout << "elem 4181" << std::endl;
-            std::cout << "cnt: " << cnt << std::endl;
-            std::cout << "nodes: ";
-            for (int node_id : cny[ielem]) {
-                std::cout << node_id << " ";
-            }
-            std::cout << std::endl;
-            std::cout << "xnode: ";
-            for (int node_id : cny[ielem]) {
-                for (int idim = 0; idim < 3; idim++) {
-                    std::cout << coor[node_id][idim] << " ";
-                }
-                std::cout << std::endl;
-            }
-        }
-
         // surface element
         if (cnt != 3) continue;
         std::vector<double> v1(3), v2(3), cross(3);
@@ -412,10 +356,10 @@ int main(int argc, char **argv) {
         cross[1] = v1[2] * v2[0] - v1[0] * v2[2];
         cross[2] = v1[0] * v2[1] - v1[1] * v2[0];
         if (cross[2] < 0) {
-            std::cout << "cross: ";
-            for (int idim = 0; idim < 3; idim++) {
-                std::cout << cross[idim] << " ";
-            }
+            // std::cout << "cross: ";
+            // for (int idim = 0; idim < 3; idim++) {
+            //     std::cout << cross[idim] << " ";
+            // }
             std::swap(nodes[1], nodes[2]);
             for (int idim = 0; idim < 3; idim++) {
                 std::swap(xnode[1][idim], xnode[2][idim]);
