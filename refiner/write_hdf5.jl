@@ -1,12 +1,6 @@
 using HDF5
 
 function main(data_dir)
-    # cny = reshape(reinterpret(Int32, read("/home/nakao/seismic_wave/input/cny_linear.bin")), (4, :))
-    # cny = Int64.(cny)
-
-    # cny_with_material = zeros(Int64, 5, size(cny, 2))
-    # cny_with_material[1:4, :] = copy(cny)
-    # cny_with_material[5, :] = ones(Int64, size(cny, 2))
     cny_with_material = reshape(reinterpret(Int32, read(data_dir * "new_connectivity.bin")), (5, :))
     cny_with_material = Int64.(cny_with_material)
 
@@ -34,4 +28,4 @@ function main(data_dir)
     end
 end 
 
-main("/data6/itou/AFEM/data/analysis_result_iburi_2km/")
+main("result/")
