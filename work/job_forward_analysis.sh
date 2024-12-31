@@ -5,7 +5,7 @@
 #PBS -l select=1:ncpus=80:mpiprocs=20
 
 #########################################################
-export WORKDIR=work2
+export WORKDIR=work1
 echo "WORKDIR: ${WORKDIR}"
 
 # number of partitions
@@ -30,14 +30,14 @@ echo "generate second order mesh"
 cd ../hdata_to_cdatamdata
 ./compile_modeling_x86-64.sh 
 cd ../tmp
-mpiexec -n ${NPART} ../hdata_to_cdatamdata/mpi_prepare_hybrid_model_refine.exe
+mpiexec -n ${NPART} ../hdata_to_cdatamdata/mpi_prepare_hybrid_model_refine.exe > hdata_to_cdatamdata.log
 
 # generate surface mesh
 echo "generate surface mesh"
 cd ../gen_surf_mesh
 ./compile_ibis.sh
 cd ../tmp
-mpiexec -n ${NPART} ../gen_surf_mesh/main
+mpiexec -n ${NPART} ../gen_surf_mesh/main > gen_surf_mesh.log
 
 # finite element solver
 export OMP_NUM_THREADS=4
@@ -45,8 +45,14 @@ echo "finite element solver"
 cd ../src_analysis_pointload
 make
 cd ../tmp
-mpiexec -n ${NPART} ../src_analysis_pointload/analysis.exe.npc1
+mpiexec -n ${NPART} ../src_analysis_pointload/analysis.exe.npc1 > analysis.log
 
+# error analysis
+echo "error analysis"
+cd ../error_estimator
+./compile_ibis.sh
+cd ../tmp
+mpiexec -n ${NPART} ../error_estimator/main > error_estimator.log
 
 cd ../work
 cd ${WORKDIR}

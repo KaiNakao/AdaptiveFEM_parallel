@@ -1,8 +1,3 @@
-!#define READASCII
-!#define PCGE
-!#define USE_SPLIT_NODE
-c
-!#define DIR_MDATA_CDATA "/tmp/u00138/"
 
 #ifndef DIR_MDATA_CDATA
 #define DIR_MDATA_CDATA "./"
@@ -77,31 +72,32 @@ c
 !       endif
 !       call MPI_BCAST(nfa,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
 ! #endif
-      call read_local_setting_hdf(im,kd,
-     & n,ne,ib,nab,nad,nadto,fidm,0,DIR_MDATA_CDATA)
+
+      call read_local_setting_hdf(im,kd, &
+            n,ne,ib,nab,nad,nadto,fidm,0,DIR_MDATA_CDATA)
       call compute_nsize(n,n_size)
       call compute_nsize(ne,ne_size)
-      call read_local_setting_hdf(im,kd,
-     & n4,ne4,ib4,nab4,nad4,nadto4,fidc,1,DIR_MDATA_CDATA)
+      call read_local_setting_hdf(im,kd, &
+            n4,ne4,ib4,nab4,nad4,nadto4,fidc,1,DIR_MDATA_CDATA)
       call compute_nsize(n4,n4_size)
       call compute_nsize(ne4,ne4_size)
-      call read_outputflag_settings
-     & (0,im,n2dvisl,n2dvisa,DIR_MDATA_CDATA)
+      call read_outputflag_settings &
+            (0,im,n2dvisl,n2dvisa,DIR_MDATA_CDATA)
       bufds=n*30
       bufls=n*30
-c
-      call main_compute_ni(im,ncpu,np,kd,nfa,n2dvisl,
-     & n_size,ne_size,n,ne,ib,nab,nad,nadto,fidm,
-     & n4_size,ne4_size,n4,ne4,ib4,nab4,nad4,nadto4,fidc,
-     & bufds,bufls)
+
+      call main_compute_ni(im,ncpu,np,kd,nfa,n2dvisl, &
+            n_size,ne_size,n,ne,ib,nab,nad,nadto,fidm, &
+            n4_size,ne4_size,n4,ne4,ib4,nab4,nad4,nadto4,fidc, &
+            bufds,bufls)
       call MPI_FINALIZE(ierr)
-c
+
       end program mainprogram
-c_______________________________________________________________________
-      subroutine main_compute_ni(im,ncpu,np,kd,nfa,n2dvisl,
-     & n_size,ne_size,n,ne,ib,nab,nad,nadto,fidm,
-     & n4_size,ne4_size,n4,ne4,ib4,nab4,nad4,nadto4,fidc,
-     & bufds,bufls)
+
+      subroutine main_compute_ni(im,ncpu,np,kd,nfa,n2dvisl, &
+            n_size,ne_size,n,ne,ib,nab,nad,nadto,fidm, &
+            n4_size,ne4_size,n4,ne4,ib4,nab4,nad4,nadto4,fidc, &
+            bufds,bufls)
       implicit none
       INCLUDE 'mpif.h'
       integer im,ncpu,np,nfa,kd,n2dvisl
@@ -188,30 +184,20 @@ c_______________________________________________________________________
       write(*,*) 'ni4,nei4',ni4,nei4
       endif
 
-c      write(*,*) im,ncpu,np,kd,nfa,plane,ds,n2dvisl
-c      write(*,*) n_size,ne_size,ni_size,nei_size,n,ne,ni,nei,
-c     & ib,nab,nad,nadto,fidm,
-c     & n4_size,ne4_size,ni4_size,nei4_size,n4,ne4,ni4,nei4
-c      write(*,*) ib4,nab4,nad4,nadto4,fidc,bufds,bufls
-c
-c#ifdef DLJ
-
-      call main(im,ncpu,np,kd,nfa,plane,ds,n2dvisl,
-     & n_size,ne_size,ni_size,nei_size,n,ne,ni,nei,
-     & ib,nab,nad,nadto,fidm,
-     & n4_size,ne4_size,ni4_size,nei4_size,n4,ne4,ni4,nei4,
-     & ib4,nab4,nad4,nadto4,fidc,
-     & bufds,bufls)
-c
-c#endif
+      call main(im,ncpu,np,kd,nfa,plane,ds,n2dvisl, &
+            n_size,ne_size,ni_size,nei_size,n,ne,ni,nei, &
+            ib,nab,nad,nadto,fidm, &
+            n4_size,ne4_size,ni4_size,nei4_size,n4,ne4,ni4,nei4, &
+            ib4,nab4,nad4,nadto4,fidc, &
+            bufds,bufls)
       end
-c_______________________________________________________________________
-      subroutine main(im,ncpu,np,kd,nfa,plane,ds,n2dvisl,
-     & n_size,ne_size,ni_size,nei_size,n,ne,ni,nei,
-     & ib,nab,nad,nadto,fidm,
-     & n4_size,ne4_size,ni4_size,nei4_size,n4,ne4,ni4,nei4,
-     & ib4,nab4,nad4,nadto4,fidc,
-     & bufds,bufls)
+
+      subroutine main(im,ncpu,np,kd,nfa,plane,ds,n2dvisl, &
+            n_size,ne_size,ni_size,nei_size,n,ne,ni,nei, &
+            ib,nab,nad,nadto,fidm, &
+            n4_size,ne4_size,ni4_size,nei4_size,n4,ne4,ni4,nei4, &
+            ib4,nab4,nad4,nadto4,fidc, &
+            bufds,bufls)
       implicit none
       INCLUDE 'mpif.h'
       integer im,ncpu,np,n2dvisl,nfa,kd
@@ -222,7 +208,7 @@ c_______________________________________________________________________
 
       real*8 plane(5),ds
       integer iad
-c
+
       integer n_size,ne_size,nei_size,ni_size,n,ne,ni,nei
       integer ib,nab,nad,nadto
       real*8 coor(3,n_size),coori(3,n_size+ni_size),dsi
@@ -239,7 +225,7 @@ c
 
 #define CRSSIZE 200
 !#define nsta 5
-c
+
       integer ne4_size,n4_size,ni4_size,nei4_size,n4,ne4,ni4,nei4
       integer ib4,nab4,nad4,nadto4
       real*8 coor4(3,n4_size),coori4(3,n4_size+ni4_size),dsi4
@@ -292,7 +278,7 @@ c
       integer numsep4(ne),elemmap(ne)
       integer ncolor,color_ind(np*MAXCOLOR)
       integer cnysep_readm(10,ne),cnysep_readm4(4,ne)
-c
+
       real*8 rmat(10,kd),younglst(2,kd)
       real*8 cort(3),rf(3),ftmp(30),xx(4,3),strike,dip,rake
       real*8 corf(nfa,3),faultp(nfa,4),sig(nkl)
@@ -320,11 +306,18 @@ c
       logical :: use_crs_d, overlap_comm_d
       logical :: overlap_comm_s, persistent_comm_s
 
+#ifdef GFLIB
+      ! for GFLIB
+      integer :: nload, iload, load_elem_arr(ne), surf_nelem
+      integer, allocatable :: surf_cny(:,:)
+      real*8, allocatable :: load_arr(:,:)
+#endif
+
       write(*,*) 'here111'
 
-      call IPCG_setting
-     & (im,use_crs_d,overlap_comm_d,
-     & overlap_comm_s,persistent_comm_s)
+      call IPCG_setting &
+            (im,use_crs_d,overlap_comm_d, &
+            overlap_comm_s,persistent_comm_s)
 
       call read_outputflag(0,im,n2dvisl,u2dflagl,DIR_MDATA_CDATA)
       call read_log_setting(im,log_innerCG,log_innerCG_per_outite)
@@ -332,13 +325,13 @@ c
       if(im.eq.0)then
       write(*,*) 'read mdata'
       endif
-      call read_local_data_hdf
-     - (n_size,ne_size,n,ne,ib,nab,nad,nadto,
-     - np,bufls,bufds,mpiad,mpiadlist,mpl,dupli,
-     - coor,num,cny,ibi,nabi,abcelem,fidm,10,6)
+      call read_local_data_hdf &
+            (n_size,ne_size,n,ne,ib,nab,nad,nadto, &
+            np,bufls,bufds,mpiad,mpiadlist,mpl,dupli, &
+            coor,num,cny,ibi,nabi,abcelem,fidm,10,6)
       if(overlap_comm_s .or. overlap_comm_d)then
-      call reorder_nodes
-     & (im,n,ne,10,nadto,mpiadlist,dupli,coor,cny,node_old2new)
+      call reorder_nodes &
+            (im,n,ne,10,nadto,mpiadlist,dupli,coor,cny,node_old2new)
       call reorder_outflag(im,n,node_old2new,n2dvisl,u2dflagl)
       endif
 #ifdef READASCII
@@ -346,15 +339,15 @@ c
 #endif
       bcarray=1
       do i=1,n
-      if( (abs(coor(1,i)-plane(1)).le.ds*0.01) .or.
-     &    (abs(coor(1,i)-plane(2)).le.ds*0.01) .or.
-     &    (abs(coor(2,i)-plane(3)).le.ds*0.01) .or.
-     &    (abs(coor(2,i)-plane(4)).le.ds*0.01) .or.
-     &    (abs(coor(3,i)-plane(5)).le.ds*0.01) )then
+      if( (abs(coor(1,i)-plane(1)).le.ds*0.01) .or. &
+          (abs(coor(1,i)-plane(2)).le.ds*0.01) .or. &
+          (abs(coor(2,i)-plane(3)).le.ds*0.01) .or. &
+          (abs(coor(2,i)-plane(4)).le.ds*0.01) .or. &
+          (abs(coor(3,i)-plane(5)).le.ds*0.01) )then
       bcarray(i)=0
       endif
       enddo
-c length of infinite element in infinite direction
+! length of infinite element in infinite direction
       dsi=5.0*ds
       do i=1,n
       coori(1,i)=coor(1,i)
@@ -365,24 +358,24 @@ c length of infinite element in infinite direction
       if(im.eq.0)then
       write(*,*) 'read cdata'
       endif
-      call read_local_data_hdf
-     - (n4_size,ne4_size,n4,ne4,ib4,nab4,nad4,nadto4,
-     - np,bufls,bufds,mpiad4,mpiadlist4,mpl4,dupli4,
-     - coor4,num4,cny4,ibi4,nabi4,abcelem4,fidc,4,3)
+      call read_local_data_hdf &
+            (n4_size,ne4_size,n4,ne4,ib4,nab4,nad4,nadto4, &
+            np,bufls,bufds,mpiad4,mpiadlist4,mpl4,dupli4, &
+            coor4,num4,cny4,ibi4,nabi4,abcelem4,fidc,4,3)
       if(overlap_comm_s)then
-      call reorder_nodes
-     & (im,n4,ne4,4,nadto4,mpiadlist4,dupli4,coor4,cny4,node_old2new4)
+      call reorder_nodes &
+            (im,n4,ne4,4,nadto4,mpiadlist4,dupli4,coor4,cny4,node_old2new4)
       endif
 #ifdef READASCII
       call read_geometry4(n4,ne4,coor4,cny4,num4)
 #endif
       bcarray4=1
       do i=1,n4
-      if( (abs(coor4(1,i)-plane(1)).le.ds*0.01) .or.
-     &    (abs(coor4(1,i)-plane(2)).le.ds*0.01) .or.
-     &    (abs(coor4(2,i)-plane(3)).le.ds*0.01) .or.
-     &    (abs(coor4(2,i)-plane(4)).le.ds*0.01) .or.
-     &    (abs(coor4(3,i)-plane(5)).le.ds*0.01) )then
+      if( (abs(coor4(1,i)-plane(1)).le.ds*0.01) .or. &
+          (abs(coor4(1,i)-plane(2)).le.ds*0.01) .or. &
+          (abs(coor4(2,i)-plane(3)).le.ds*0.01) .or. &
+          (abs(coor4(2,i)-plane(4)).le.ds*0.01) .or. &
+          (abs(coor4(3,i)-plane(5)).le.ds*0.01) )then
       bcarray4(i)=0
       endif
       enddo
@@ -402,19 +395,19 @@ c length of infinite element in infinite direction
       endif
       call MPI_BCAST(rmat,10*kd,MPI_REAL8,0,MPI_COMM_WORLD,ierr)
       call makmatlist(kd,rmat,younglst)
-c
-#ifdef USEIEPENTA
-      call setIEpenta
-     & (im,n,ne,cny,num,cnyi,numi,nfla,ni,nad,plane,
-     & nei,coor,coori,ds,
-     & nadto,mpiad,mpiadlist,mpl,
-     & nadtoi,mpiadi,mpiadlisti,mpli,10,12)
 
-      call setIEpenta
-     & (im,n4,ne4,cny4,num4,cnyi4,numi4,nfla4,ni4,nad4,plane,
-     & nei4,coor4,coori4,ds,
-     & nadto4,mpiad4,mpiadlist4,mpl4,
-     & nadtoi4,mpiadi4,mpiadlisti4,mpli4,4,6)
+#ifdef USEIEPENTA
+      call setIEpenta &
+            (im,n,ne,cny,num,cnyi,numi,nfla,ni,nad,plane, &
+            nei,coor,coori,ds, &
+            nadto,mpiad,mpiadlist,mpl, &
+            nadtoi,mpiadi,mpiadlisti,mpli,10,12)
+
+      call setIEpenta &
+            (im,n4,ne4,cny4,num4,cnyi4,numi4,nfla4,ni4,nad4,plane, &
+            nei4,coor4,coori4,ds, &
+            nadto4,mpiad4,mpiadlist4,mpl4, &
+            nadtoi4,mpiadi4,mpiadlisti4,mpli4,4,6)
 #else
       mpli=mpl
       nadtoi=nadto
@@ -433,64 +426,64 @@ c
       netmp = 0
       if (im.eq.0) print *, "set_whole_CRS"
       if(use_crs_d) netmp = ne
-      call set_whole_CRS
-     & (im,kd,n,ni,netmp,nei,10,12,cny,cnyi,num,numi,
-     & nfla,younglst,coori,dsi,
-     & niwd,pentawptrd,pentawindd,
-     & nird,pentarptrd,pentarindd,kcrsvald,
-     & nadtoi,mpiadlisti,overlap_comm_d,CRSSIZE)
+      call set_whole_CRS &
+            (im,kd,n,ni,netmp,nei,10,12,cny,cnyi,num,numi, &
+            nfla,younglst,coori,dsi, &
+            niwd,pentawptrd,pentawindd, &
+            nird,pentarptrd,pentarindd,kcrsvald, &
+            nadtoi,mpiadlisti,overlap_comm_d,CRSSIZE)
 
-      call set_whole_CRS
-     & (im,kd,n,ni,ne,nei,10,12,cny,cnyi,num,numi,
-     & nfla,younglst,coori,dsi,
-     & niw,pentawptr,pentawind,nir,pentarptr,pentarind,kcrsval,
-     & nadtoi,mpiadlisti,overlap_comm_s,CRSSIZE)
+      call set_whole_CRS &
+            (im,kd,n,ni,ne,nei,10,12,cny,cnyi,num,numi, &
+            nfla,younglst,coori,dsi, &
+            niw,pentawptr,pentawind,nir,pentarptr,pentarind,kcrsval, &
+            nadtoi,mpiadlisti,overlap_comm_s,CRSSIZE)
 
-      call set_whole_CRS
-     & (im,kd,n4,ni4,ne4,nei4,4,6,cny4,cnyi4,num4,numi4,
-     & nfla4,younglst,coori4,dsi4,
-     & niw4,pentawptr4,pentawind4,
-     & nir4,pentarptr4,pentarind4,kcrsval4,
-     & nadtoi4,mpiadlisti4,overlap_comm_s,CRSSIZE)
+      call set_whole_CRS &
+            (im,kd,n4,ni4,ne4,nei4,4,6,cny4,cnyi4,num4,numi4, &
+            nfla4,younglst,coori4,dsi4, &
+            niw4,pentawptr4,pentawind4, &
+            nir4,pentarptr4,pentarind4,kcrsval4, &
+            nadtoi4,mpiadlisti4,overlap_comm_s,CRSSIZE)
 
       if (im.eq.0) print *, "setcnysep"
-      call setcnysep(im,n,ne,n4,num,cny,cny4,
-     & nsep,nsep4,numsep,
-     & nsep_n_ptr,nsep_n_ptr4,nsep_ne_ptr,nsepnmap,nsepnmap4,
-     & cnysep_read,cnysep_write,cnysep_read4,cnysep_write4)
+      call setcnysep(im,n,ne,n4,num,cny,cny4, &
+            nsep,nsep4,numsep, &
+            nsep_n_ptr,nsep_n_ptr4,nsep_ne_ptr,nsepnmap,nsepnmap4, &
+            cnysep_read,cnysep_write,cnysep_read4,cnysep_write4) 
       numsep4=numsep
       if (im.eq.0) print *, "setcolor"
-      call setcolor
-     - (im,nsep,ne_size,10,4,nsep,ne,np,cnysep_write,numsep,
-     -  ncolor,color_ind,elemmap,cnysep_write4,numsep4)
+      call setcolor &
+            (im,nsep,ne_size,10,4,nsep,ne,np,cnysep_write,numsep, &
+            ncolor,color_ind,elemmap,cnysep_write4,numsep4)
       do ie=1,ne
       cnysep_readm(:,ie)=cnysep_read(:,elemmap(ie))
       cnysep_readm4(:,ie)=cnysep_read4(:,elemmap(ie))
       enddo
 
       if (im.eq.0) print *, "setduplixyz"
-      call setduplixyz(n,ni,im,mpibuf,
-     & nad,nadtoi,mpiadi,mpiadlisti,mpli,duplixyz)
-      call setduplixyz(n4,ni4,im,mpibuf,
-     & nad4,nadtoi4,mpiadi4,mpiadlisti4,mpli4,duplixyz4)
+      call setduplixyz(n,ni,im,mpibuf, &
+            nad,nadtoi,mpiadi,mpiadlisti,mpli,duplixyz)
+      call setduplixyz(n4,ni4,im,mpibuf, &
+            nad4,nadtoi4,mpiadi4,mpiadlisti4,mpli4,duplixyz4)
 
       if (im.eq.0) print *, "read_sig"
       call read_sig(im,sig)
       call read_uvalcoe(im,uvalcoe)
-c
+
 #ifdef USE_SPLIT_NODE
-      call set_fault_input
-     & (im,kd,mpibuf,younglst,
-     & n_size,ne_size,n,ne,coor,cny,num,
-     & nad,nadtoi,mpiadi,mpiadlisti,mpli,
-     & rv
+      call set_fault_input &
+            (im,kd,mpibuf,younglst, &
+            n_size,ne_size,n,ne,coor,cny,num, &
+            nad,nadtoi,mpiadi,mpiadlisti,mpli, &
+            rv &
 #ifdef MEASURE_TIME_BARRIER
-     - ,mp,timerbufd,timerbufi,ind
+            ,mp,timerbufd,timerbufi,ind &
 #endif
-     - )
+            )
 #else
 #endif
-c
+
       uval=0
 #ifdef USEIEPENTA
       do ie=1,nei
@@ -529,14 +522,14 @@ c
       enddo
       enddo
 #endif
-      call compblockdiaginv
-     & (n_size,ne_size,n,ne,kd,num,cny,coori,younglst,
-     & ni_size,nei_size,ni,nei,
-     & nad,nadtoi,mpiadi,mpiadlisti,mpli,im,mpibuf,
+      call compblockdiaginv &
+            (n_size,ne_size,n,ne,kd,num,cny,coori,younglst, &
+            ni_size,nei_size,ni,nei, &
+            nad,nadtoi,mpiadi,mpiadlisti,mpli,im,mpibuf, &
 #ifdef MEASURE_TIME_BARRIER
-     & ,mp,timerbufd,timerbufi,ind,
+            ,mp,timerbufd,timerbufi,ind, &
 #endif
-     & uval)
+            uval)
 
       uval4=0
 #ifdef USEIEPENTA
@@ -576,41 +569,65 @@ c
       enddo
       enddo
 #endif
-      call compblockdiaginv4
-     & (n4_size,ne4_size,n4,ne4,kd,num4,cny4,coori4,younglst,
-     & ni4_size,nei4_size,ni4,nei4,
-     & nad,nadtoi4,mpiadi4,mpiadlisti4,mpli4,im,mpibuf,
+      call compblockdiaginv4 &
+            (n4_size,ne4_size,n4,ne4,kd,num4,cny4,coori4,younglst, &
+            ni4_size,nei4_size,ni4,nei4, &
+            nad,nadtoi4,mpiadi4,mpiadlisti4,mpli4,im,mpibuf, &
 #ifdef MEASURE_TIME_BARRIER
-     & ,mp,timerbufd,timerbufi,ind,
+            ,mp,timerbufd,timerbufi,ind, &
 #endif
-     & uval4)
-c
-      call map4to10_init
-     & (im,ds,
-     & n,ne,ni,nei,coori,cny,cnyi,
-     & n4,ne4,ni4,nei4,coori4,cny4,cnyi4,
-     & map4to10)
+            uval4)
 
-      call print_problem_size(im,n,ne,nadto,ni,n4,nadto4,ni4,
-     &  niw,nir,niw4,nir4)
+      call map4to10_init &
+            (im,ds, &
+            n,ne,ni,nei,coori,cny,cnyi, &
+            n4,ne4,ni4,nei4,coori4,cny4,cnyi4, &
+            map4to10)
+
+      call print_problem_size(im,n,ne,nadto,ni,n4,nadto4,ni4, &
+            niw,nir,niw4,nir4)
 
 #ifdef UNITFAULT
 !       do iunit =1,56
        do iunit =1,1
+      if(im.eq.0)then
+      write(*,*) 'USE POINT SOURCE'
+      endif
+      call set_fault_point &
+            (n,n_size,ne,ne_size,ni,ni_size,im,rv,coor,cny,iunit,ds)
 #endif
-!       if(im.eq.0)then
-!       write(*,*) 'USE POINT SOURCE'
-!       endif
-!       call set_fault_point
-!      -(n,n_size,ne,ne_size,ni,ni_size,im,rv,coor,cny,iunit,ds)
-      call pointload(im, n, coor, ne, cny, ni, rv)
-      call sync_parallel_block_d
-     & (n+ni,n+ni,
-     & rv,nad,nadtoi,mpiadi,mpiadlisti,mpli,ierr,im,mpibuf
+
+#ifdef GFLIB
+      if (im.eq.0) then
+            print *, "read_loads"
+            call read_nload(nload)
+      endif
+      call MPI_BCAST(nload, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+      allocate (load_arr(5, nload))
+      if (im.eq.0) then
+            call read_loads(nload, load_arr)
+      endif
+      call MPI_BCAST(load_arr, 5*nload, MPI_REAL8, 0, MPI_COMM_WORLD, ierr)
+
+      call read_surf_nelem(im, surf_nelem)
+      if (surf_nelem > 0) then
+            allocate (surf_cny(4, surf_nelem))
+            call read_surf_cny(im, surf_nelem, surf_cny)
+      endif
+
+      load_elem_arr = 0
+      do iload = 1, nload
+      call pointload(im, n, coor, ne, cny, ni, rv, &
+            load_arr, nload, iload, load_elem_arr, &
+            surf_nelem, surf_cny)
+#endif
+      call sync_parallel_block_d &
+            (n+ni,n+ni, &
+            rv,nad,nadtoi,mpiadi,mpiadlisti,mpli,ierr,im,mpibuf &
 #ifdef MEASURE_TIME_BARRIER
-     - ,mp,timerbufd,timerbufi,ind
+            ,mp,timerbufd,timerbufi,ind &
 #endif
-     - )
+            )
 
      
       up=0.0
@@ -620,28 +637,28 @@ c
 #ifdef USE_PA
       call fapp_start('IPCG', 0, 0)
 #endif
-      call IPCG
-     & (im,np,kd,younglst,sig,mpibuf,
-     & n,ne,coori,cny,num,uval,duplixyz,bcarray,
-     & ni,nei,cnyi,dsi,numi,nfla,
-     & nad,nadtoi,mpiadi,mpiadlisti,mpli,
-     & nird,pentarptrd,pentarindd,
-     & niwd,pentawptrd,pentawindd,kcrsvald,
-     & nir,pentarptr,pentarind,
-     & niw,pentawptr,pentawind,kcrsval,
-     & nsep,numsep,nsep_n_ptr,nsep_ne_ptr,nsepnmap,
-     & cnysep_readm,cnysep_write,
-     & ncolor,color_ind,
-     & n4,ne4,coori4,cny4,num4,uval4,duplixyz4,bcarray4,
-     & ni4,nei4,cnyi4,dsi4,numi4,nfla4,
-     & nad4,nadtoi4,mpiadi4,mpiadlisti4,mpli4,
-     & nir4,pentarptr4,pentarind4,
-     & niw4,pentawptr4,pentawind4,kcrsval4,
-     & map4to10,
-     & cnysep_readm4,cnysep_write4,nsep_n_ptr4,nsep4,nsepnmap4,
-     & uvalcoe,log_innerCG,log_innerCG_per_outite,
-     & use_crs_d,overlap_comm_d,overlap_comm_s,persistent_comm_s,
-     & rv,up)
+      call IPCG &
+            (im,np,kd,younglst,sig,mpibuf, &
+            n,ne,coori,cny,num,uval,duplixyz,bcarray, &
+            ni,nei,cnyi,dsi,numi,nfla, &
+            nad,nadtoi,mpiadi,mpiadlisti,mpli, &
+            nird,pentarptrd,pentarindd, &
+            niwd,pentawptrd,pentawindd,kcrsvald, &
+            nir,pentarptr,pentarind, &
+            niw,pentawptr,pentawind,kcrsval, &
+            nsep,numsep,nsep_n_ptr,nsep_ne_ptr,nsepnmap, &
+            cnysep_readm,cnysep_write, &
+            ncolor,color_ind, &
+            n4,ne4,coori4,cny4,num4,uval4,duplixyz4,bcarray4, &
+            ni4,nei4,cnyi4,dsi4,numi4,nfla4, &
+            nad4,nadtoi4,mpiadi4,mpiadlisti4,mpli4, &
+            nir4,pentarptr4,pentarind4, &
+            niw4,pentawptr4,pentawind4,kcrsval4, &
+            map4to10, &
+            cnysep_readm4,cnysep_write4,nsep_n_ptr4,nsep4,nsepnmap4, &
+            uvalcoe,log_innerCG,log_innerCG_per_outite, &
+            use_crs_d,overlap_comm_d,overlap_comm_s,persistent_comm_s, &
+            rv,up)
 #ifdef USE_PA
       call fapp_stop('IPCG', 0, 0)
 #endif
@@ -667,16 +684,7 @@ c
       if(im.eq.0)then
       write(*,*) 'up2block_infinite',up2
       endif
-c
-c#ifndef DEBUGMURAKAMI
-c      call set_nankai_obs_sub
-c     - (im,n,n_size,ne,ne_size,ni,ni_size,coor,up,cny,
-c     -  nad,mpiadi,mpiadlisti,mpli,nadtoi,mpibuf,nadto,
-c     -  n2dvisl,u2dflagl,iunit)
-c
-c      call output_surface
-c     -(n2dvisl,n,ni,im,u2dl,up,u2dflagl,coor,iunit)
-c#else
+
       if(n2dvisl.gt.0)then
       do i=1,n2dvisl
       do j=1,npc
@@ -685,24 +693,23 @@ c#else
       u2dl(3*(i-1)+3+(j-1)*n2dvisl)=up(3*npc*(u2dflagl(i)-1)+2*npc+j)
       enddo
       enddo
-      write(filename,'(a11,i6.6,a6,i6.6,a4)')
-     - './2Doutput/',im,'.disp.',0,'.bin'
-      call MPI_FILE_OPEN(MPI_COMM_SELF,filename,
-     - MPI_MODE_CREATE+MPI_MODE_WRONLY,
-     - MPI_INFO_NULL,fh,ierr)
+      write(filename,'(a11,i6.6,a6,i6.6,a4)') &
+            './2Doutput/',im,'.disp.',0,'.bin'
+      call MPI_FILE_OPEN(MPI_COMM_SELF,filename, &
+            MPI_MODE_CREATE+MPI_MODE_WRONLY, &
+            MPI_INFO_NULL,fh,ierr)
       mpicount=n2dvisl*3*npc
       mpifsbuf=mpicount*4
       call MPI_FILE_SET_SIZE(fh,mpifsbuf,ierr)
       call MPI_FILE_WRITE(fh,u2dl,mpicount,MPI_REAL4,mpistat,ierr)
       call MPI_FILE_CLOSE(fh,ierr)
       endif
-c#endif
 #ifdef UNITFAULT
       enddo
 #endif
-
-      call output_displacement(im, n, ni, up)
-
-c
+#ifdef GFLIB
+      call output_displacement(im, n, ni, up, iload)
+      enddo
+      call output_load_elem(im, ne, load_elem_arr)
+#endif
       end
-c_______________________________________________________________________
