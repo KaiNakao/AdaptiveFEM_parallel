@@ -41,6 +41,15 @@ cp data/modeling_setting.dat ../tmp_new/data/
 cp data/para_setting.dat ../tmp_new/data/
 cp data/pointload.dat ../tmp_new/data/
 
+# reduce ds in modeling_setting.dat to half
+cd ../tmp_new
+file="data/modeling_setting.dat"
+current_ds=$(awk '/^ds/{getline; print}' $file)
+new_ds=$(echo "$current_ds / 2" | bc -l)
+awk -v new_ds="$new_ds" '
+/^ds/ {print; getline; print new_ds; next} 
+{print}
+' $file > temp_file && mv temp_file $file
 
 # check surface
 echo "check surface"
