@@ -29,7 +29,7 @@ OPTLEV="-O3 -qopenmp"
 OPTF="-i8"
 
 OPTC=" "
-OPTCPP=" "
+OPTCPP="-DNO_SURFACE"
 INCLHDF="-I${HDFPATH}/include"
 LINKHDF="-L${HDFPATH}/lib/ -lhdf5_hl -lhdf5 -lrt -ldl -lm -Wl,-rpath -Wl,${HDFPATH}/lib"
 #LINKHDF="-L${HDFPATH} ${HDFPATH}/lib/libhdf5_hl.a ${HDFPATH}/lib/libhdf5.a -lz -lrt -ldl -lm -Wl,-rpath -Wl,${HDFPATH}/lib"
