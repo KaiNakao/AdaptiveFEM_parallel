@@ -24,7 +24,7 @@ ifeq ($(findstring ibis, $(hostname)), ibis)
   METISPATH = ../metis-5.1.0_icc_32bit
 
   ##### DEBUG
-  OPTLEV = -g -fopenmp -DOUTPUT_LOG
+  OPTLEV = -g -fopenmp -DOUTPUT_LOG -fpe0
   OPTF =  -mcmodel=large -i-dynamic -heap-arrays -zero -check -warn all
   OPTF =  -check -warn all
   OPTF =  -g -CB -traceback
@@ -68,7 +68,7 @@ LINKMETIS = -L${METISPATH}/lib/ -lmetis
 OPTIONS = \
 	-DREAL_4=real*4 -DREAL_4_SIZE=4 -DMPI_REAL_4=MPI_REAL4 \
 	-DUSEIEPENTA -DNOOMPSAME -DTET4GRID -DMAXCOLOR=20 \
-	-Dnpc=${NPC} -Dnkl=${NKL} -Dnsta=${NSTA} -DDIV_N=32 -DNOUSE_PA -DNONOUTPUTBLOCK=100 -DUNITFAULT
+	-Dnpc=${NPC} -Dnkl=${NKL} -Dnsta=${NSTA} -DDIV_N=32 -DNOUSE_PA -DNONOUTPUTBLOCK=100 -DGFLIB
 #	-DREAL_4=real*8 -DREAL_4_SIZE=8 -DMPI_REAL_4=MPI_REAL8 \
 
 .SUFFIXES: .o .F .F90 .cpp

@@ -22,11 +22,6 @@ function write_mesh(data_dir)
 
     @show "number of element: ", size(cny, 2)
 
-    marked_flag = zeros(Int32, size(cny, 2))
-    marked_flag .= 0
-    marked_flag[marked_elem] .= 1
-
-
     # cells = [MeshCell(VTKCellTypes.VTK_QUADRATIC_TETRA, cny[:, i]) for i = 1:size(cny, 2)]
     cells = [MeshCell(VTKCellTypes.VTK_TETRA, cny[:, i]) for i = 1:size(cny, 2)]
 
@@ -36,7 +31,7 @@ function write_mesh(data_dir)
         # vtk["displacement_x"] = displacement[1, :]
         # vtk["displacement_y"] = displacement[2, :]
         # vtk["displacement_z"] = displacement[3, :]
-        vtk["marked_flag"] = marked_flag
+        vtk["marked_flag"] = marked_elem
         vtk["load_elem"] = load_elem
         vtk["surf_elem"] = surf_elem
         vtk["partition"] = partition
@@ -118,9 +113,9 @@ function write_tmp()
     end
 end
 
-write_mesh("../tmp/result/")
+write_mesh("result/")
 #write_mesh("/data6/itou/AFEM/data/analysis_result_iburi_2km/")
 println("------------")
-write_new_mesh("../tmp/result/")
+write_new_mesh("result/")
 #write_new_mesh("/data6/itou/AFEM/data/analysis_result_iburi_2km/")
 # write_tmp()

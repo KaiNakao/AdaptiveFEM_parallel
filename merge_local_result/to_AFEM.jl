@@ -9,8 +9,9 @@ nnode_arr = []
 nelem_arr = []
 cny_quad_arr = []
 coor_quad_arr = []
-displacement_quad_arr = []
 load_elem_arr = []
+eta_arr = []
+marked_elem_arr = []
 surf_elem_arr = []
 
 for iproc in 0:nproc - 1
@@ -49,10 +50,6 @@ for iproc in 0:nproc - 1
 
     close(fid)
 
-    filename = work_dir * "displacement/" * lpad(iproc, 6, "0") * ".bin"
-    displacement_quad = reshape(reinterpret(Float64, read(filename)), (3, :))
-    push!(displacement_quad_arr, displacement_quad)
-
     filename = work_dir * "mdata/" * lpad(iproc, 6, "0") * ".load_elem.bin"
     load_elem = reinterpret(Int32, read(filename))
     push!(load_elem_arr, load_elem)
@@ -61,6 +58,14 @@ for iproc in 0:nproc - 1
             @show "load_elem", iproc, ielem
         end
     end
+    
+    filename = work_dir * "mdata/" * lpad(iproc, 6, "0") * ".eta.bin"
+    eta = reinterpret(Float64, read(filename))
+    push!(eta_arr, eta)
+
+    filename = work_dir * "mdata/" * lpad(iproc, 6, "0") * ".marked_elem.bin"
+    marked_elem = reinterpret(Int32, read(filename))
+    push!(marked_elem_arr, marked_elem)
 
     filename = work_dir * "surf_mesh/" * lpad(iproc, 6, "0") * "_cny.bin"
     tmp = reshape(reinterpret(Int32, read(filename)), (4, :))
@@ -145,9 +150,11 @@ end
 
 cny_quad_global = zeros(Int32, (11, sum(nelem_arr)))
 coor_quad_global = zeros(Float64, (3, node_id_cnt))
-displacement_quad_global = zeros(Float64, (3, node_id_cnt))
 load_elem_global = zeros(Int32, sum(nelem_arr))
 surf_elem_global = zeros(Int32, sum(nelem_arr))
+eta_global = zeros(Float64, sum(nelem_arr))
+marked_elem_global = zeros(Int32, sum(nelem_arr))
+
 partition = zeros(Int32, sum(nelem_arr))
 pt = 0
 for iproc in 0:nproc - 1
@@ -159,7 +166,8 @@ for iproc in 0:nproc - 1
     coor_quad = coor_quad_arr[iproc + 1]
     load_elem = load_elem_arr[iproc + 1]
     surf_elem = surf_elem_arr[iproc + 1]
-    displacement_quad = displacement_quad_arr[iproc + 1]
+    eta = eta_arr[iproc + 1]
+    marked_elem = marked_elem_arr[iproc + 1]
 
     for ielem in 1:nelem
         for inode in 1:10
@@ -169,15 +177,13 @@ for iproc in 0:nproc - 1
         partition[pt + ielem] = iproc
         load_elem_global[pt + ielem] = load_elem[ielem]
         surf_elem_global[pt + ielem] = surf_elem[ielem]
-        if (pt + ielem == 143713)
-            @show "surf_elem", iproc, ielem
-        end
+        eta_global[pt + ielem] = eta[ielem]
+        marked_elem_global[pt + ielem] = marked_elem[ielem]
     end
     pt += nelem
 
     for inode in 1:nnode
         coor_quad_global[:, local_to_global[inode]] = coor_quad[:, inode]
-        displacement_quad_global[:, local_to_global[inode]] = displacement_quad[:, inode]
     end 
 end 
 
@@ -207,9 +213,6 @@ end
 open(work_dir * "result/partition.bin", "w") do io
     write(io, partition)
 end
-open(work_dir * "result/displacement_quad.bin", "w") do io
-    write(io, displacement_quad_global)
-end
 open(work_dir * "result/coor_linear.bin", "w") do io
     write(io, coor_linear_global)
 end
@@ -221,6 +224,13 @@ open(work_dir * "result/load_elem.bin", "w") do io
 end
 open(work_dir * "result/surf_elem.bin", "w") do io
     write(io, surf_elem_global)
+end
+open(work_dir * "result/eta_quad.bin", "w") do io
+    write(io, eta_global)
+end
+marked_indices = Int32.(findall(marked_elem_global .== 1))
+open(work_dir * "result/marked_elem_quad.bin", "w") do io
+    write(io, marked_indices)
 end
 
 nmaterial = maximum(cny_linear_global[5, :]) 
@@ -254,4 +264,9 @@ open(work_dir * "result/shape.dat", "w") do io
     write(io, "nmaterial\n")    
     write(io, string(nmaterial))
     write(io, "\n")
+
+    write(io, "nelem_marked\n")
+    write(io, string(length(marked_indices)))
+    write(io, "\n")
+
 end

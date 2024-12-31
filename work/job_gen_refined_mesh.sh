@@ -32,7 +32,7 @@ mkdir -p data hdata cdata mdata 2Doutput surf_mesh displacement result
 # write hdf5 file for new mesh
 echo "write hdf5 file for new mesh"
 cd ../tmp_org
-julia ../refiner/write_hdf5.jl
+julia ../refiner/write_hdf5.jl > write_hdf5.log
 mv result/tet4* ../tmp_new/data/
 cp data/log_setting.dat ../tmp_new/data/
 cp data/material.dat ../tmp_new/data/ 
@@ -47,7 +47,7 @@ echo "check surface"
 cd ../hdf5_to_surf
 ./compile.sh
 cd ../tmp_new
-../hdf5_to_surf/hdf5_to_surf.exe -s
+../hdf5_to_surf/hdf5_to_surf.exe -s > hdf5_to_surf.log
 # check that only data/tri_surf.001.vtk was generated. Otherwise, mesh generation failed.
 
 # partition mesh
@@ -56,7 +56,7 @@ cd ../hdf5_to_hdata/
 ./compile_partition_2part_x86-64.sh
 cd ../tmp_new
 export OMP_NUM_THREADS=1
-../hdf5_to_hdata/partition_hybrid_model_2part.exe
+../hdf5_to_hdata/partition_hybrid_model_2part.exe > hdf5_to_hdata.log
 
 cd ../work
 mkdir -p ${WORKDIR_ORG}
