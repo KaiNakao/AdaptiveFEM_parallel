@@ -25,7 +25,7 @@ function write_mesh(data_dir)
     # cells = [MeshCell(VTKCellTypes.VTK_QUADRATIC_TETRA, cny[:, i]) for i = 1:size(cny, 2)]
     cells = [MeshCell(VTKCellTypes.VTK_TETRA, cny[:, i]) for i = 1:size(cny, 2)]
 
-    vtk_grid("../tmp/result/vtu/mesh", coor, cells) do vtk
+    vtk_grid("result/vtu/mesh", coor, cells) do vtk
         vtk["eta"] = eta[1, :]
         vtk["material"] = material
         # vtk["displacement_x"] = displacement[1, :]
@@ -80,7 +80,7 @@ function write_new_mesh(data_dir)
     cells = [MeshCell(VTKCellTypes.VTK_TETRA, cny[:, i]) for i = 1:size(cny, 2)]
 
 
-    vtk_grid("../tmp/result/vtu/new_mesh", coor, cells) do vtk
+    vtk_grid("result/vtu/new_mesh", coor, cells) do vtk
         vtk["new_elem"] = new_elem
         vtk["material"] = material
         vtk["aspect_ratio"] = aspect_ratio[1, :]

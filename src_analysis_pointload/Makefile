@@ -32,7 +32,8 @@ ifeq ($(findstring ibis, $(hostname)), ibis)
   OPTF =  -g -CB -traceback -mcmodel=large -i-dynamic -heap-arrays -zero -check bound
 
   ##### RELEASE
-  OPTLEV = -O3 -fopenmp
+#   OPTLEV = -O3 -fopenmp
+  OPTLEV = -O3 -fopenmp -fpe0
   OPTF =  -mcmodel=large -heap-arrays -zero
 
   OPTC =

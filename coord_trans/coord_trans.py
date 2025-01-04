@@ -57,10 +57,10 @@ def enu_to_xyz(lat, lon, de, dn, du, lat_c, lon_c):
     return np.dot(np.linalg.inv(mat_c).T, np.dot(np.linalg.inv(mat), np.array([de, dn, du])))
 
 # target area
-min_lon = 141.3
-max_lon = 142.6
-min_lat = 42.2
-max_lat = 43.2
+min_lon = 140.5
+max_lon = 143.5
+min_lat = 41.7
+max_lat = 43.7
 # min_lon = 140.0
 # max_lon = 144.0
 # min_lat = 40.0
@@ -68,7 +68,8 @@ max_lat = 43.2
 
 # grid size
 # ds = 1000.
-ds = 2500.
+# ds = 2500.
+ds = 5000.
 # ds = 10000.
 
 # number of layers for JIVSM
@@ -219,10 +220,14 @@ column_names = ["lon", "lat", "elv", "dE", "dN", "dU", "id"]
 df_gnss = pd.read_csv("../coord_trans/original/GNSS_org.dat", delim_whitespace=True, skiprows=1, names=column_names)
 
 # exclude invalid observation
-df_gnss = df_gnss[df_gnss["lon"] > min_lon]
-df_gnss = df_gnss[df_gnss["lon"] < max_lon]
-df_gnss = df_gnss[df_gnss["lat"] > min_lat]
-df_gnss = df_gnss[df_gnss["lat"] < max_lat]
+min_lon_ = min_lon + (max_lon - min_lon) * 0.25
+max_lon_ = max_lon - (max_lon - min_lon) * 0.25
+min_lat_ = min_lat + (max_lat - min_lat) * 0.25
+max_lat_ = max_lat - (max_lat - min_lat) * 0.25
+df_gnss = df_gnss[df_gnss["lon"] > min_lon_]
+df_gnss = df_gnss[df_gnss["lon"] < max_lon_]
+df_gnss = df_gnss[df_gnss["lat"] > min_lat_]
+df_gnss = df_gnss[df_gnss["lat"] < max_lat_]
 df_gnss.reset_index(inplace=True, drop=True)
 
 # calculate geoid
@@ -314,7 +319,8 @@ df_gnss_out["type"] = ["GNSS"] * len(df_gnss_out)
 df_gnss_out.set_axis(["x", "y", "ex", "ey", "ez", "dlos", "sigma", "type"], axis='columns')
 df_gnss_out.to_csv("data/observation_gnss.dat", index=False, sep=" ")
 
-df_obs = pd.concat([df_sar_out, df_gnss_out])
+# df_obs = pd.concat([df_sar_out, df_gnss_out])
+df_obs = pd.concat([df_gnss_out])
 df_obs.to_csv("data/observation.dat", index=False, sep=" ")
 
 # find max/min of x and y

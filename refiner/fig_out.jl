@@ -15,4 +15,4 @@ function createAspRatioHist(data_dir)
     savefig(data_dir * "fig/asp_hist.png")
 end
 
-createAspRatioHist("../tmp/result/")
+createAspRatioHist("result/")

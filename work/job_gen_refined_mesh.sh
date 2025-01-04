@@ -5,8 +5,8 @@
 #PBS -l select=1:ncpus=80:mpiprocs=80
 
 #########################################################
-export WORKDIR_ORG=work1
-export WORKDIR_NEW=work2
+export WORKDIR_ORG=work2
+export WORKDIR_NEW=work3
 echo "WORKDIR_ORG: ${WORKDIR_ORG}"
 echo "WORKDIR_NEW: ${WORKDIR_NEW}"
 

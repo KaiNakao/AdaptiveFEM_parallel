@@ -2,7 +2,7 @@ using HDF5
 using LinearAlgebra
 
 work_dir = "./"
-nproc = 16
+nproc = 64
 
 neighbor_arr = []
 nnode_arr = []
@@ -13,6 +13,7 @@ load_elem_arr = []
 eta_arr = []
 marked_elem_arr = []
 surf_elem_arr = []
+displacement_arr = []
 
 for iproc in 0:nproc - 1
     filename = work_dir * "mdata/" * lpad(iproc, 6, "0") * ".data.h5"
@@ -72,6 +73,10 @@ for iproc in 0:nproc - 1
     surf_elem = zeros(Int32, nelem)
     surf_elem[tmp[4, :]] .= 1
     push!(surf_elem_arr, surf_elem)
+
+    filename = work_dir * "displacement/0001_" * lpad(iproc, 6, "0") * ".bin"
+    displacement = reshape(reinterpret(Float64, read(filename)), (3, :))
+    push!(displacement_arr, displacement)
 end
 
 rank_added = []
@@ -150,6 +155,7 @@ end
 
 cny_quad_global = zeros(Int32, (11, sum(nelem_arr)))
 coor_quad_global = zeros(Float64, (3, node_id_cnt))
+displacement_global = zeros(Float64, (3, node_id_cnt))
 load_elem_global = zeros(Int32, sum(nelem_arr))
 surf_elem_global = zeros(Int32, sum(nelem_arr))
 eta_global = zeros(Float64, sum(nelem_arr))
@@ -168,6 +174,7 @@ for iproc in 0:nproc - 1
     surf_elem = surf_elem_arr[iproc + 1]
     eta = eta_arr[iproc + 1]
     marked_elem = marked_elem_arr[iproc + 1]
+    displacement = displacement_arr[iproc + 1]
 
     for ielem in 1:nelem
         for inode in 1:10
@@ -184,6 +191,7 @@ for iproc in 0:nproc - 1
 
     for inode in 1:nnode
         coor_quad_global[:, local_to_global[inode]] = coor_quad[:, inode]
+        displacement_global[:, local_to_global[inode]] = displacement[:, inode]
     end 
 end 
 
@@ -231,6 +239,10 @@ end
 marked_indices = Int32.(findall(marked_elem_global .== 1))
 open(work_dir * "result/marked_elem_quad.bin", "w") do io
     write(io, marked_indices)
+end
+
+open(work_dir * "result/displacement_quad.bin", "w") do io
+    write(io, displacement_global)
 end
 
 nmaterial = maximum(cny_linear_global[5, :]) 

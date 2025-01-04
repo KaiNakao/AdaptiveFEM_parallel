@@ -5,7 +5,7 @@
 #PBS -l select=1:ncpus=80:mpiprocs=80
 
 #########################################################
-export WORKDIR=work2
+export WORKDIR=work3
 echo "WORKDIR: ${WORKDIR}"
 
 # number of partitions
@@ -18,8 +18,8 @@ export OMP_NUM_THREADS=1
 export OMP_STACKSIZE=1G
 ulimit -s unlimited
 
-mkdir -p ../tmp
-cd ../tmp
+mkdir -p ../${WORKDIR}_tmp
+cd ../${WORKDIR}_tmp
 mv ../work/${WORKDIR}/* ./
 
 # merge local results
@@ -30,7 +30,7 @@ julia ../merge_local_result/to_AFEM.jl > merge_local_result.log
 echo "mesh refinement"
 cd ../refiner
 make
-cd ../tmp
+cd ../${WORKDIR}_tmp
 ../refiner/main > refiner.log
 
 mkdir -p result/vtu
@@ -41,6 +41,6 @@ julia ../refiner/fig_out.jl
 
 cd ../work
 cd ${WORKDIR}
-mv -f ../../tmp/* ./
-rm -rf   ../../tmp
+mv -f ../../${WORKDIR}_tmp/* ./
+rm -rf   ../../${WORKDIR}_tmp
 
