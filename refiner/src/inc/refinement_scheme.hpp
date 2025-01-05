@@ -16,7 +16,10 @@ public: // public member function
     void executeRefinement_bisect(std::vector<std::vector<int>> &new_conn,
                                   std::vector<std::vector<double>> &new_coor,
                                   std::vector<int> &new_matid_arr,
-                                  std::vector<int> &original);
+                                  std::vector<int> &original,
+                                  std::vector<std::vector<int>> &refinement_edge,
+                                  std::vector<std::vector<std::vector<int>>> &marked_edge,
+                                  std::vector<bool> &tet_flag);
     void executeRefinement(std::vector<std::vector<int>> &new_conn, 
                            std::vector<std::vector<double>> &new_coor,
                            std::vector<int> &new_matid_arr);

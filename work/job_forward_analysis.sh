@@ -5,7 +5,7 @@
 #PBS -l select=1:ncpus=80:mpiprocs=20
 
 #########################################################
-export WORKDIR=work2
+export WORKDIR=work4
 echo "WORKDIR: ${WORKDIR}"
 
 # number of partitions

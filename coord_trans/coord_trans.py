@@ -52,8 +52,8 @@ max_lat = 43.2
 
 # grid size
 # ds = 1000.
-ds = 2500.
-# ds = 10000.
+# ds = 2500.
+ds = 10000.
 
 # number of layers for JIVSM
 nlayer = 23

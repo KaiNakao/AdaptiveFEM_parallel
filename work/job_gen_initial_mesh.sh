@@ -6,7 +6,7 @@
 
 #########################################################
 # check DNSQUASH in compile_modeling_x86-64_ibis.sh #
-export WORKDIR=work1
+export WORKDIR=work3
 echo "WORKDIR: ${WORKDIR}"
 
 # number of partitions

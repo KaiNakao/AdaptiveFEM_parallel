@@ -23,3 +23,15 @@ void read_load_elem(const std::string &data_dir,
 void read_marked_elem(const std::string &data_dir,
                       const int &nelem_marked,
                       std::vector<int> &marked_elem);
+
+void read_refinement_edge(const std::string &data_dir,
+                          const int &nelem,
+                          std::vector<std::vector<int>> &refinement_edge);
+
+void read_marked_edge(const std::string &data_dir,
+                      const int &nelem,
+                      std::vector<std::vector<std::vector<int>>> &marked_edge);
+
+void read_tet_flag(const std::string &data_dir,
+                   const int &nelem,
+                   std::vector<bool> &tet_flag);

@@ -5,7 +5,7 @@
 #PBS -l select=1:ncpus=80:mpiprocs=80
 
 #########################################################
-export WORKDIR=work2
+export WORKDIR=work3
 echo "WORKDIR: ${WORKDIR}"
 
 # number of partitions
@@ -29,6 +29,7 @@ julia ../merge_local_result/to_AFEM.jl
 # error analysis and mesh refinement
 echo "error analysis and mesh refinement"
 cd ../refiner
+make clean
 make
 cd ../tmp
 ../refiner/main
