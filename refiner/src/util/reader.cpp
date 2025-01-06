@@ -152,6 +152,60 @@ void read_marked_elem(const std::string &data_dir, const int &nelem_marked,
     fclose(fp);
 }
 
+void read_refinement_edge(const std::string &data_dir,
+                          const int &nelem,
+                          std::vector<std::vector<int>> &refinement_edge) {
+    std::vector<int> buf_refienment_edge(2 * nelem, -1);
+    FILE *fp;
+    if ((fp = fopen((data_dir + "refienment_edge.bin").c_str(), "r")) != NULL) {
+        fread(&buf_refienment_edge[0], sizeof(int), 2 * nelem, fp);
+        fclose(fp);
+    } else {
+        std::cout << "this is 1st iteration of refinement" << std::endl;
+    }
+
+    for (int ielem = 0; ielem < nelem; ielem++) {
+        for (int inode = 0; inode < 2; inode++) {
+            refinement_edge[ielem][inode] = buf_refienment_edge[ielem * 2 + inode];
+        }
+    }
+}
+
+void read_marked_edge(const std::string &data_dir,
+                      const int &nelem,
+                      std::vector<std::vector<std::vector<int>>> &marked_edge) {
+    std::vector<int> buf_marked_edge(2 * 4 * nelem, -1);
+    FILE *fp;
+    if ((fp = fopen((data_dir + "marked_edge.bin").c_str(), "r")) != NULL) {
+        fread(&buf_marked_edge[0], sizeof(int), 2 * 4 * nelem, fp);
+        fclose(fp);
+    } else {
+        std::cout << "this is 1st iteration of refinement" << std::endl;
+    }
+
+    for (int ielem = 0; ielem < nelem; ielem++) {
+        for (int iface = 0; iface < 4; iface++) {
+            for (int inode = 0; inode < 2; inode++) {
+                marked_edge[ielem][iface][inode] = buf_marked_edge[ielem * 8 + iface * 2 + inode];
+            }
+        }
+    }
+}
+
+void read_tet_flag(const std::string &data_dir,
+                   const int &nelem,
+                   std::vector<bool> &tet_flag) {
+    for (int ielem = 0; ielem < nelem; ielem++) {
+        tet_flag[ielem] = false;
+    }
+    FILE *fp;
+    if ((fp = fopen((data_dir + "refienment_edge.bin").c_str(), "r")) != NULL) {
+        fread(&tet_flag[0], sizeof(int), nelem, fp);
+        fclose(fp);
+    } else {
+        std::cout << "this is 1st iteration of refinement" << std::endl;
+    }
+
 void read_nload(int &nload) {
     std::ifstream ifs("data/pointload.dat");
     if (!ifs) {

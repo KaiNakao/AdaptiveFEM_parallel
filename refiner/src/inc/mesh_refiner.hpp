@@ -54,6 +54,9 @@ private: // private member variable
     std::unordered_map<int, std::vector<int>>  m_elements;
     std::set<int> m_candidate_elements;
     std::set<int> m_new_elements;
+    std::vector<std::vector<int>> m_refinement_edge;
+    std::vector<std::vector<std::vector<int>>> m_marked_edge;
+    std::vector<bool> m_tet_flag;
 
     // smoothing tool
     std::set<int> m_node_smooth;

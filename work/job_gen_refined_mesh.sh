@@ -5,8 +5,8 @@
 #PBS -l select=1:ncpus=80:mpiprocs=80
 
 #########################################################
-export WORKDIR_ORG=work2
-export WORKDIR_NEW=work3
+export WORKDIR_ORG=work3
+export WORKDIR_NEW=work4
 echo "WORKDIR_ORG: ${WORKDIR_ORG}"
 echo "WORKDIR_NEW: ${WORKDIR_NEW}"
 
@@ -40,6 +40,8 @@ cp data/modeldomain.dat ../tmp_new/data/
 cp data/modeling_setting.dat ../tmp_new/data/
 cp data/para_setting.dat ../tmp_new/data/
 cp data/pointload.dat ../tmp_new/data/
+cp result/refinement_edge.bin ../tmp_new/result/
+cp result/marked_edge.bin ../tmp_new/result/
 
 # reduce ds in modeling_setting.dat to half
 cd ../tmp_new

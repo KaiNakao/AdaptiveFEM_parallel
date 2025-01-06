@@ -62,10 +62,16 @@ Refinement_scheme::~Refinement_scheme() {}
 void Refinement_scheme::executeRefinement_bisect(
     std::vector<std::vector<int>> &new_conn,
     std::vector<std::vector<double>> &new_coor, std::vector<int> &new_matid_arr,
-    std::vector<int> &original) {
+    std::vector<int> &original,
+    std::vector<std::vector<int>> &refinement_edge,
+    std::vector<std::vector<std::vector<int>>> &marked_edge,
+    std::vector<bool> &tet_flag) {
     std::cout << "executeRefinement_bisect" << std::endl;
 
+
     std::set<Tetrahedron> t, s;
+
+    if (refinement_edge[0][0] == -1) {
     // initialize t, s
     for (const auto &p : m_elems_in_mesh) {
         int elem_id = p.first;
@@ -104,8 +110,8 @@ void Refinement_scheme::executeRefinement_bisect(
                     longest = length;
                 }
             }
-            face.marked_edge.nodes.insert(std::get<1>(longest));
-            face.marked_edge.nodes.insert(std::get<2>(longest));
+            face.marked_edge.nodes.insert(std::get<1>(longest)); // mark longest edge on face
+            face.marked_edge.nodes.insert(std::get<2>(longest)); // mark longest edge on face
             tet.faces.push_back(face);
         }
         // tet.refinement_edge
@@ -125,7 +131,7 @@ void Refinement_scheme::executeRefinement_bisect(
                 longest = length;
             }
         }
-        tet.refinement_edge.nodes.insert(std::get<1>(longest));
+        tet.refinement_edge.nodes.insert(std::get<1>(longest)); // refinement edge: longest edge in tet
         tet.refinement_edge.nodes.insert(std::get<2>(longest));
         // tet.flag
         tet.flag = false;
@@ -138,6 +144,48 @@ void Refinement_scheme::executeRefinement_bisect(
             s.insert(tet);
         }
     }
+    } 
+
+    // inherit refinement/marked edges via file outputs
+    else {
+    for (const auto &p : m_elems_in_mesh) {
+        int elem_id = p.first;
+        std::vector<int> tet_nodes = p.second;
+        Tetrahedron tet;
+        // tet.nodes
+        for (int node_id : tet_nodes) {
+            tet.nodes.insert(node_id);
+        }
+        // tet.faces
+        for (int iface = 0; iface < 4; iface++) {
+            Face face;
+            // face.nodes
+            std::vector<int> face_nodes;
+            for (int inode = 0; inode < 3; inode++) {
+                face.nodes.insert(tet_nodes.at((iface + inode + 1) % 4));
+                face_nodes.push_back(tet_nodes.at((iface + inode + 1) % 4));
+            }
+            // face.marked_edge
+            face.marked_edge.nodes.insert(marked_edge[elem_id][iface][0]);
+            face.marked_edge.nodes.insert(marked_edge[elem_id][iface][1]);
+            tet.faces.push_back(face);
+        }
+        // tet.refinement_edge
+        std::tuple<double, int, int> longest;
+        tet.refinement_edge.nodes.insert(refinement_edge[elem_id][0]);
+        tet.refinement_edge.nodes.insert(refinement_edge[elem_id][1]);
+        // tet.flag
+        tet.flag = tet_flag[elem_id];
+        // tet.material
+        tet.material = m_matid_map.at(elem_id);
+        // tet.original
+        tet.original = true;
+        t.insert(tet);
+        if (m_elem_refine.count(elem_id)) {
+            s.insert(tet);
+        }
+    }
+    }
 
     local_refine(t, s);
 
@@ -146,6 +194,11 @@ void Refinement_scheme::executeRefinement_bisect(
     for (int node_id = 0; node_id < m_coor_map.size(); node_id++) {
         new_coor[node_id] = m_coor_map[node_id];
     }
+
+    std::vector<std::vector<int>> refinement_edge_buf(t.size(), std::vector<int>(2));
+    std::vector<std::vector<std::vector<int>>> marked_edge_buf
+                (t.size(), std::vector<std::vector<int>>(4, std::vector<int>(2)));
+    std::vector<bool> tet_flag_buf(t.size());
 
     new_conn.resize(t.size());
     new_matid_arr.resize(t.size());
@@ -173,8 +226,35 @@ void Refinement_scheme::executeRefinement_bisect(
         } else {
             original[ielem] = 0;
         }
+
+        // output refinemnt/marked edges
+        if (tet.refinement_edge.nodes.size() == 2) {
+            for (const auto node : tet.refinement_edge.nodes) {
+                refinement_edge_buf[ielem].push_back(node);
+            }
+        } else {
+            std::cout << "ERROR: more than 2 nodes in a refinement edge" << std::endl;
+        }
+
+        for (int iface=0; iface<4; iface++){
+            Face face = tet.faces[iface];
+            if (face.marked_edge.nodes.size() == 2) {
+                for (const auto node : face.marked_edge.nodes) {
+                    marked_edge_buf[ielem][iface].push_back(node);
+                }
+            } else {
+                std::cout << "ERROR: more than 2 nodes in a marked edge" << std::endl;
+            }
+        }
+
+        tet_flag_buf[ielem] = tet.flag;
+
         ielem += 1;
     }
+
+    refinement_edge = refinement_edge_buf;
+    marked_edge = marked_edge_buf;
+    tet_flag = tet_flag_buf;
 
     m_face_to_elems.clear();
     for (int elem_id = 0; elem_id < new_conn.size(); elem_id++) {
@@ -231,6 +311,10 @@ void Refinement_scheme::executeRefinement_bisect(
     }
 }
 
+
+
+// t: all tets
+// s: refinemnt tets
 void Refinement_scheme::local_refine(std::set<Tetrahedron> &t,
                                      std::set<Tetrahedron> &s) {
     std::map<Edge, int> edges_cut;
@@ -608,7 +692,7 @@ void Refinement_scheme::split14(int _tetra_id, std::vector<double> &_pt,
                                 std::set<int> &elems_for_flip) {
     // Store root tetra
     std::vector<int> simplex = m_elems_in_mesh[_tetra_id];
-
+                                                            
     // Add new node
     int new_node_id = m_coor_map.size() - 1;
 
