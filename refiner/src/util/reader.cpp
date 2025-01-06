@@ -195,16 +195,20 @@ void read_marked_edge(const std::string &data_dir,
 void read_tet_flag(const std::string &data_dir,
                    const int &nelem,
                    std::vector<bool> &tet_flag) {
-    for (int ielem = 0; ielem < nelem; ielem++) {
-        tet_flag[ielem] = false;
-    }
+    std::vector<bool> buf_tet_flag(nelem, false);
     FILE *fp;
     if ((fp = fopen((data_dir + "refienment_edge.bin").c_str(), "r")) != NULL) {
-        fread(&tet_flag[0], sizeof(int), nelem, fp);
+        std::vector<char> temp_buf(nelem, 0);
+        size_t read_count = fread(temp_buf.data(), sizeof(char), nelem, fp);
+        for (int i = 0; i < read_count; ++i) {
+            buf_tet_flag[i] = static_cast<bool>(temp_buf[i]);
+        }
         fclose(fp);
     } else {
         std::cout << "this is 1st iteration of refinement" << std::endl;
     }
+    tet_flag = buf_tet_flag;
+}
 
 void read_nload(int &nload) {
     std::ifstream ifs("data/pointload.dat");
