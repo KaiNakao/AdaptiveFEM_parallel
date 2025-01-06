@@ -1,13 +1,78 @@
-subroutine pointload(myid, nnode, coor, nelem, cny3d, ni, rv)
+subroutine read_nload(nload)
+    implicit none
+
+    integer, intent(inout) :: nload
+    character(len=100) :: filename
+
+    open(10, file="data/pointload.dat", status="old")
+    read(10, *) ! number of loads
+    read(10, *) nload
+    print *, "number of loads: ", nload
+    close(10)
+
+end subroutine read_nload
+
+subroutine read_loads(nload, load_arr)
+    implicit none
+
+    integer, intent(in) :: nload
+    real*8, intent(inout) :: load_arr(5, nload)
+    integer :: iload
+    character(len=100) :: filename
+
+    open(10, file="data/pointload.dat", status="old")
+    read(10, *) ! number of loads
+    read(10, *) ! nload
+    read(10, *) ! x y ex ey ez
+    do iload = 1, nload
+        read(10, *) load_arr(:, iload)
+    end do
+    close(10)
+    
+end subroutine read_loads
+
+subroutine read_surf_nelem(myid, surf_nelem)
+    implicit none
+
+    integer, intent(in) :: myid
+    integer, intent(inout) :: surf_nelem
+    character(len=100) :: filename
+
+    write(filename, '("surf_mesh/", I6.6, "_nelem.dat")') myid
+    open(10, file=filename, status="old")
+    read(10, *) surf_nelem
+    close(10)
+
+end subroutine read_surf_nelem
+
+subroutine read_surf_cny(myid, surf_nelem, surf_cny)
+    implicit none
+
+    integer, intent(in) :: myid, surf_nelem
+    integer, intent(inout) :: surf_cny(4, surf_nelem)
+    character(len=100) :: filename
+
+    write(filename, '("surf_mesh/", I6.6, "_cny.bin")') myid
+    open(10, file=filename, status="old", access="stream", form="unformatted")
+    read(10) surf_cny
+    close(10)
+
+end subroutine read_surf_cny
+
+
+subroutine pointload(myid, nnode, coor, nelem, cny3d, ni, rv, &
+                     load_arr, nload, iload, load_elem_arr, &
+                     surf_nelem, surf_cny)
     use mpi
     implicit none
     
-    integer, intent(in) :: myid, nnode, nelem, cny3d(10, nelem), ni
-    double precision, intent(in) :: coor(3, nnode) 
+    integer, intent(in) :: myid, nnode, nelem, cny3d(10, nelem), ni, &
+                           nload, iload, surf_nelem, surf_cny(4, surf_nelem)
+    double precision, intent(in) :: coor(3, nnode), load_arr(5, nload)
+    integer, intent(inout) :: load_elem_arr(nelem)
     double precision, intent(inout) :: rv(3*(nnode + ni))
-    integer :: ierr, surf_nelem, ielem, elem_id, inode, &
-               found, found_cnt, load_elem, node_id(10), load_elem_arr(nelem)
-    integer, allocatable :: surf_cny(:,:)
+    integer :: ierr, ielem, elem_id, inode, &
+               found, found_cnt, load_elem, node_id(10)
     double precision :: x, y, ex, ey, ez, xnode(3, 10), &
                         load_point(2), load_direction(3), &
                         dxdr(3, 3), drdx(3, 3), dx(3), detj, r1, r2, r3, &
@@ -15,40 +80,14 @@ subroutine pointload(myid, nnode, coor, nelem, cny3d, ni, rv)
                         l0, l1, l2, l3, nvec(10), ftmp(30)
     character(len=100) :: filename
 
-    if (myid == 0) then
-        open(10, file="data/pointload.dat", status="old")
-        read(10, *) 
-        read(10, *) x, y, ex, ey, ez
-        close(10)
-    end if
-
-    call mpi_bcast(x, 1, mpi_double_precision, 0, mpi_comm_world, ierr)
-    call mpi_bcast(y, 1, mpi_double_precision, 0, mpi_comm_world, ierr)
-    call mpi_bcast(ex, 1, mpi_double_precision, 0, mpi_comm_world, ierr)
-    call mpi_bcast(ey, 1, mpi_double_precision, 0, mpi_comm_world, ierr)
-    call mpi_bcast(ez, 1, mpi_double_precision, 0, mpi_comm_world, ierr)
-
-    load_point(1) = x
-    load_point(2) = y
-    load_direction(1) = ex
-    load_direction(2) = ey
-    load_direction(3) = ez
-
-    write(filename, '("surf_mesh/", I6.6, "_nelem.dat")') myid
-    open(10, file=filename, status="old")
-    read(10, *) surf_nelem
-    close(10)
-
-    allocate(surf_cny(4, surf_nelem))
+    load_point(1) = load_arr(1, iload)
+    load_point(2) = load_arr(2, iload)
+    load_direction(1) = load_arr(3, iload)
+    load_direction(2) = load_arr(4, iload)
+    load_direction(3) = load_arr(5, iload)
 
     found = 0
-    load_elem_arr = 0
     if (surf_nelem > 0) then
-        write(filename, '("surf_mesh/", I6.6, "_cny.bin")') myid
-        open(10, file=filename, status="old", access="stream", form="unformatted")
-        read(10) surf_cny
-        close(10)
-
         ! search elements that contains load point
         do ielem = 1, surf_nelem
             elem_id = surf_cny(4, ielem)
@@ -175,22 +214,30 @@ subroutine pointload(myid, nnode, coor, nelem, cny3d, ni, rv)
     end if
     rv = rv / found_cnt
 
-    ! output load_elem_arr
+end subroutine pointload
+
+subroutine output_load_elem(myid, nelem, load_elem_arr)
+    implicit none
+
+    integer, intent(in) :: myid, nelem
+    integer, intent(in) :: load_elem_arr(nelem)
+    character(len=100) :: filename
+
     write(filename, '("mdata/", I6.6, ".load_elem.bin")') myid
     open(10, file=filename, status="replace", access="stream", form="unformatted")
     write(10) load_elem_arr
     close(10)
 
-end subroutine pointload
+end subroutine output_load_elem
 
-subroutine output_displacement(myid, n, ni, up)
+subroutine output_displacement(myid, n, ni, up, iload)
     implicit none
     
-    integer, intent(in) :: myid, n, ni
+    integer, intent(in) :: myid, n, ni, iload
     double precision, intent(in) :: up(3*(n + ni))
     character(len=100) :: filename
 
-    write(filename, '("displacement/", I6.6, ".bin")') myid
+    write(filename, '("displacement/", I4.4, "_", I6.6, ".bin")') iload, myid
     open(10, file=filename, status="replace", access="stream", form="unformatted")
     write(10) up(1:3*n)
     close(10)

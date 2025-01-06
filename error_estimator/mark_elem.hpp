@@ -1,0 +1,8 @@
+#pragma once
+#include <vector>
+
+#include "mpi.h"
+void mark_elem_to_refine(const std::vector<double> &eta_arr,
+                         const std::vector<int> &load_elem,
+                         std::vector<int> &marked_elem,
+                         const double &threshold);

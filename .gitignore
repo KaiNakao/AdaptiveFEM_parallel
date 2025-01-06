@@ -52,6 +52,12 @@
 !src_analysis_pointload/*.c
 !src_analysis_pointload/Makefile
 
+!error_estimator/*.cpp
+!error_estimator/*.hpp
+!error_estimator/*.c
+!error_estimator/*.sh
+
+
 !work/*.sh
 
 !/.gitignore

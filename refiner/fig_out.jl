@@ -1,4 +1,5 @@
 using Plots
+ENV["GKSwstype"] = "100"
 function createAspRatioHist(data_dir)
     aspect_ratio_0 = sort(reinterpret(Float64, read(data_dir * "aspect_ratio_0.bin")), rev=true)[1:1000]
     aspect_ratio_1 = sort(reinterpret(Float64, read(data_dir * "aspect_ratio_1.bin")), rev=true)[1:1000]
@@ -14,4 +15,4 @@ function createAspRatioHist(data_dir)
     savefig(data_dir * "fig/asp_hist.png")
 end
 
-createAspRatioHist("../tmp/result/")
+createAspRatioHist("result/")

@@ -40,11 +40,27 @@ def lonlat_to_local(lat, lon, h, lat_c, lon_c, h_c):
                     [np.cos(lat_c_rad) * np.cos(lon_c_rad), np.cos(lat_c_rad) * np.sin(lon_c_rad), np.sin(lat_c_rad)]])
     return np.dot(mat, ecef - ecef_c)
 
+# vector (dE, dN, dU) to (dx, dy, dz)
+def enu_to_xyz(lat, lon, de, dn, du, lat_c, lon_c):
+    lat_rad = lat / 180 * np.pi
+    lon_rad = lon / 180 * np.pi
+    lat_c_rad = lat_c / 180 * np.pi
+    lon_c_rad = lon_c / 180 * np.pi
+    mat_c = np.array([[-np.sin(lon_c_rad), np.cos(lon_c_rad), 0],
+                      [-np.sin(lat_c_rad) * np.cos(lon_c_rad), -np.sin(lat_c_rad)
+                       * np.sin(lon_c_rad), np.cos(lat_c_rad)],
+                      [np.cos(lat_c_rad) * np.cos(lon_c_rad), np.cos(lat_c_rad) * np.sin(lon_c_rad), np.sin(lat_c_rad)]])
+    mat = np.array([[-np.sin(lon_rad), np.cos(lon_rad), 0],
+                    [-np.sin(lat_rad) * np.cos(lon_rad), -np.sin(lat_rad)
+                     * np.sin(lon_rad), np.cos(lat_rad)],
+                    [np.cos(lat_rad) * np.cos(lon_rad), np.cos(lat_rad) * np.sin(lon_rad), np.sin(lat_rad)]])
+    return np.dot(np.linalg.inv(mat_c).T, np.dot(np.linalg.inv(mat), np.array([de, dn, du])))
+
 # target area
-min_lon = 141.3
-max_lon = 142.6
-min_lat = 42.2
-max_lat = 43.2
+min_lon = 140.5
+max_lon = 143.5
+min_lat = 41.7
+max_lat = 43.7
 # min_lon = 140.0
 # max_lon = 144.0
 # min_lat = 40.0
@@ -53,7 +69,9 @@ max_lat = 43.2
 # grid size
 # ds = 1000.
 # ds = 2500.
-ds = 10000.
+
+ds = 5000.
+# ds = 10000.
 
 # number of layers for JIVSM
 nlayer = 23
@@ -111,6 +129,200 @@ for i in range(nlayer):
         h = elv + geoid
         layer[j] = lonlat_to_local(lat, lon, h, lat_c, lon_c, h_c)
     layers.append(layer)
+
+# coordinate transformation of the observation data
+# SAR
+column_names = ["lon", "lat", "elv", "dlos", "eE", "eN", "eU", "path"]
+df_sar = pd.read_csv("../coord_trans/original/SAR_org.dat", delim_whitespace=True, skiprows=1, names=column_names)
+type_ls = []
+for i in df_sar.index:
+    path = str(df_sar.loc[i, "path"])
+    type_ls.append("SAR_" + path)
+df_sar["type"] = type_ls
+
+# calculate geoid
+lat = df_sar["lat"]
+lon = df_sar["lon"]
+with open("../gsigeo2011_ver2_1_asc/program/input.dat", "w") as f:
+    for i in range(len(lat)):
+        j = (i + 1) % 10000
+        num = f'{j:4}'
+        name = f'{j:18}'
+        lat_str = f'{to_dms(lat[i]):15.04f}'
+        lon_str = f'{to_dms(lon[i]):15.04f}'
+        f.write(num + name + lat_str + lon_str + "\n")
+subprocess.run(["./gsigeome_asc", "input.dat", "output.dat", "gsigeo2011_ver2_1.asc"],
+                cwd="../gsigeo2011_ver2_1_asc/program")
+geoid = np.loadtxt(
+    "../gsigeo2011_ver2_1_asc/program/output.dat")[:, 4]
+df_sar["geoid"] = geoid
+df_sar["h"] = df_sar["elv"] + df_sar["geoid"]
+
+df_sar_out = pd.DataFrame()
+
+# coordinate transformation for location
+xvec = []
+yvec = []
+for i in df_sar.index:
+    lat = df_sar.loc[i, "lat"]
+    lon = df_sar.loc[i, "lon"]
+    h = df_sar.loc[i, "elv"] + df_sar.loc[i, "geoid"]
+    xyz = lonlat_to_local(lat, lon, h, lat_c, lon_c, h_c)
+    xvec.append(xyz[0])
+    yvec.append(xyz[1])
+
+df_sar_out["x"] = np.array(xvec)
+df_sar_out["y"] = np.array(yvec)
+
+# observation direction
+exvec = []
+eyvec = []
+ezvec = []
+for i in df_sar.index:
+    lat = df_sar.loc[i, "lat"]
+    lon = df_sar.loc[i, "lon"]
+    ee = df_sar.loc[i, "eE"]
+    en = df_sar.loc[i, "eN"]
+    eu = df_sar.loc[i, "eU"]
+    evec = enu_to_xyz(lat, lon, ee, en, eu, lat_c, lon_c)
+    evec /= np.linalg.norm(evec)
+    exvec.append(evec[0])
+    eyvec.append(evec[1])
+    ezvec.append(evec[2])
+
+df_sar_out["ex"] = exvec
+df_sar_out["ey"] = eyvec
+df_sar_out["ez"] = ezvec
+
+# line of sight displacement
+dlosvec = []
+for i in df_sar.index:
+    dlosvec.append(df_sar.loc[i, "dlos"])
+df_sar_out["dlos"] = dlosvec
+
+# observation error
+sigma_dict = {18: 2.1, 116: 1.1, 122: 0.9}
+sigmavec = []
+for i in df_sar.index:
+    path = df_sar.loc[i, "path"]
+    sigma = sigma_dict[path]
+    sigmavec.append(sigma)
+df_sar_out["sigma"] = sigmavec
+
+# type
+df_sar_out["type"] = df_sar["type"]
+
+df_sar_out.set_axis(["x", "y", "ex", "ey", "ez", "dlos", "sigma", "type"],
+            axis='columns')
+df_sar_out.to_csv("data/observation_sar.dat", index=False, sep=" ")
+
+# GNSS
+column_names = ["lon", "lat", "elv", "dE", "dN", "dU", "id"]
+df_gnss = pd.read_csv("../coord_trans/original/GNSS_org.dat", delim_whitespace=True, skiprows=1, names=column_names)
+
+# exclude invalid observation
+min_lon_ = min_lon + (max_lon - min_lon) * 0.25
+max_lon_ = max_lon - (max_lon - min_lon) * 0.25
+min_lat_ = min_lat + (max_lat - min_lat) * 0.25
+max_lat_ = max_lat - (max_lat - min_lat) * 0.25
+df_gnss = df_gnss[df_gnss["lon"] > min_lon_]
+df_gnss = df_gnss[df_gnss["lon"] < max_lon_]
+df_gnss = df_gnss[df_gnss["lat"] > min_lat_]
+df_gnss = df_gnss[df_gnss["lat"] < max_lat_]
+df_gnss.reset_index(inplace=True, drop=True)
+
+# calculate geoid
+lat = df_gnss["lat"]
+lon = df_gnss["lon"]
+with open("../gsigeo2011_ver2_1_asc/program/input.dat", "w") as f:
+    for i in range(len(lat)):
+        j = (i + 1) % 10000
+        num = f'{j:4}'
+        name = f'{j:18}'
+        lat_str = f'{to_dms(lat[i]):15.04f}'
+        lon_str = f'{to_dms(lon[i]):15.04f}'
+        f.write(num + name + lat_str + lon_str + "\n")
+subprocess.run(["./gsigeome_asc", "input.dat", "output.dat", "gsigeo2011_ver2_1.asc"],
+                cwd="../gsigeo2011_ver2_1_asc/program")
+geoid = np.loadtxt(
+    "../gsigeo2011_ver2_1_asc/program/output.dat")[:, 4]
+df_gnss["geoid"] = geoid
+df_gnss["h"] = df_gnss["elv"] + df_gnss["geoid"]
+df_gnss.to_csv("data/GNSS_reduced.dat", index=False, sep=" ")
+
+df_gnss_out = pd.DataFrame()
+
+# coordinate transformation for location
+xvec = []
+yvec = []
+for i in df_gnss.index:
+    lat = df_gnss.loc[i, "lat"]
+    lon = df_gnss.loc[i, "lon"]
+    h = df_gnss.loc[i, "elv"] + df_gnss.loc[i, "geoid"]
+    xyz = lonlat_to_local(lat, lon, h, lat_c, lon_c, h_c)
+    for j in range(3):
+        xvec.append(xyz[0])
+        yvec.append(xyz[1])
+
+df_gnss_out["x"] = np.array(xvec)
+df_gnss_out["y"] = np.array(yvec)
+
+# observation direction
+exvec = []
+eyvec = []
+ezvec = []
+for i in df_gnss.index:
+    d = [1, 0, 0]
+    exvec.append(d[0])
+    eyvec.append(d[1])
+    ezvec.append(d[2])
+    d = [0, 1, 0]
+    exvec.append(d[0])
+    eyvec.append(d[1])
+    ezvec.append(d[2])
+    d = [0, 0, 1]
+    exvec.append(d[0])
+    eyvec.append(d[1])
+    ezvec.append(d[2])
+
+df_gnss_out["ex"] = exvec
+df_gnss_out["ey"] = eyvec
+df_gnss_out["ez"] = ezvec
+
+# line of sight displacement
+dlosvec = []
+for i in df_gnss.index:
+    lat = df_gnss.loc[i, "lat"]
+    lon = df_gnss.loc[i, "lon"]
+    de = df_gnss.loc[i, "dE"]
+    dn = df_gnss.loc[i, "dN"]
+    du = df_gnss.loc[i, "dU"]
+    disp = enu_to_xyz(lat, lon, de, dn, du, lat_c, lon_c)
+    dlosvec.append(disp[0])
+    dlosvec.append(disp[1])
+    dlosvec.append(disp[2])
+df_gnss_out["dlos"] = dlosvec
+
+# observation error
+sigmavec = []
+for i in df_gnss.index:
+    sigma = np.array([0.2, 0.3, 0.9])
+    # increase error for incomplete data
+    if df_gnss.loc[i, "id"] in ["950132", "950141"]:
+        sigma *= 10
+    sigmavec.append(sigma[0])
+    sigmavec.append(sigma[1])
+    sigmavec.append(sigma[2])
+df_gnss_out["sigma"] = sigmavec
+
+# type
+df_gnss_out["type"] = ["GNSS"] * len(df_gnss_out)
+df_gnss_out.set_axis(["x", "y", "ex", "ey", "ez", "dlos", "sigma", "type"], axis='columns')
+df_gnss_out.to_csv("data/observation_gnss.dat", index=False, sep=" ")
+
+# df_obs = pd.concat([df_sar_out, df_gnss_out])
+df_obs = pd.concat([df_gnss_out])
+df_obs.to_csv("data/observation.dat", index=False, sep=" ")
 
 # find max/min of x and y
 xmin = int(min(min(layer[:,0]) for layer in layers))
@@ -204,35 +416,24 @@ with open("data/para_setting.dat", "w") as f:
 
 with open("data/log_setting.dat", "w") as f:
     f.write("output log for inner CGs (1:on)\n")
-    f.write(str(1) + "\n")
+    f.write(str(0) + "\n")
     f.write("output summary for inner CG per outer iteration (1:on)\n")
-    f.write(str(1) + "\n")
+    f.write(str(0) + "\n")
 
-# fault_x = 16500.
-# fault_y = 20500.
-# fault_z = 17500.
-# strike = 90.
-# dip = 90.
-# rake = 0.
-# moment = 1.0 * 10**19
-# with open("data/faultpara.dat", "w") as f:
-#     f.write("num of point source\n")
-#     f.write("1\n")
-#     f.write("1 th point source\n")
-#     f.write(str(fault_x) + "\n")
-#     f.write(str(fault_y) + "\n")
-#     f.write(str(fault_z) + "\n")
-#     f.write(str(strike) + "\n")
-#     f.write(str(dip) + "\n")
-#     f.write(str(rake) + "\n")
-#     f.write(str(moment) + "\n")
-
-# pointload (tentative)
+# pointload
 with open("data/pointload.dat", "w") as f:
-    x = (xmin + xmax) / 2.
-    y = (ymin + ymax) / 2.
-    ex = -0.5900865906800314 
-    ey = 0.10467736655876937 
-    ez = -0.8005251179256889
+    f.write("number of loads\n")
+    f.write(str(df_obs.shape[0]) + "\n")
     f.write("x y ex ey ez\n")
-    f.write("%f %f %f %f %f\n" % (x, y, ex, ey, ez))
+    xvec = df_obs["x"].values
+    yvec = df_obs["y"].values
+    exvec = df_obs["ex"].values
+    eyvec = df_obs["ey"].values
+    ezvec = df_obs["ez"].values
+    for iobs in range(df_obs.shape[0]):
+        x = xvec[iobs] - xmin
+        y = yvec[iobs] - ymin
+        ex = exvec[iobs]
+        ey = eyvec[iobs]
+        ez = ezvec[iobs]
+        f.write("%f %f %f %f %f\n" % (x, y, ex, ey, ez))

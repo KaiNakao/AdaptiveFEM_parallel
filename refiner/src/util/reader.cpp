@@ -1,12 +1,12 @@
-#include <string>
-#include <fstream>
-#include <iostream>
-#include <vector>
 #include "reader.hpp"
 
-void read_shape(const std::string &data_dir, 
-                int &nelem, int &nnode_linear, int &nnode_quad, int &nmaterial, int &nelem_marked) {
+#include <fstream>
+#include <iostream>
+#include <string>
+#include <vector>
 
+void read_shape(const std::string &data_dir, int &nelem, int &nnode_linear,
+                int &nnode_quad, int &nmaterial, int &nelem_marked) {
     std::ifstream ifs(data_dir + "shape.dat");
     std::cout << "path: " << data_dir + "shape.dat" << std::endl;
     if (!ifs) {
@@ -15,15 +15,15 @@ void read_shape(const std::string &data_dir,
     }
 
     std::string buf;
-    ifs >> buf; // read "nelem"
+    ifs >> buf;  // read "nelem"
     ifs >> nelem;
-    ifs >> buf; // read "nnode_linear"
+    ifs >> buf;  // read "nnode_linear"
     ifs >> nnode_linear;
-    ifs >> buf; // read "nnode_quad"
+    ifs >> buf;  // read "nnode_quad"
     ifs >> nnode_quad;
-    ifs >> buf; // read "nmaterial"
+    ifs >> buf;  // read "nmaterial"
     ifs >> nmaterial;
-    ifs >> buf; // read "nelem_marked"
+    ifs >> buf;  // read "nelem_marked"
     ifs >> nelem_marked;
 
     std::cout << "nelem: " << nelem << std::endl;
@@ -33,8 +33,7 @@ void read_shape(const std::string &data_dir,
     std::cout << "nelem_marked: " << nelem_marked << std::endl;
 }
 
-void read_mesh(const std::string &data_dir, 
-               const int &nelem, const int &nnode, 
+void read_mesh(const std::string &data_dir, const int &nelem, const int &nnode,
                std::vector<std::vector<int>> &cny,
                std::vector<std::vector<double>> &coor,
                std::vector<int> &matid_arr) {
@@ -70,14 +69,19 @@ void read_mesh(const std::string &data_dir,
     }
 }
 
-void read_displacement(const std::string &data_dir, 
-                       const int &nnode, 
-                       std::vector<std::vector<double>> &displacement) {
+void read_displacement(const std::string &data_dir, const int &nnode,
+                       std::vector<std::vector<double>> &displacement,
+                       int iload) {
     std::vector<double> buf_displacement(3 * nnode);
 
     FILE *fp;
+    std::string load_id = std::to_string(iload + 1);
+    load_id.insert(load_id.begin(), 4 - load_id.size(), '0');
     // Read displacement
-    if ((fp = fopen((data_dir + "displacement_quad.bin").c_str(), "r")) == NULL) {
+    // if ((fp = fopen((data_dir + "displacement_quad.bin").c_str(), "r")) ==
+    if ((fp =
+             fopen((data_dir + "displacement_quad_" + load_id + ".bin").c_str(),
+                   "r")) == NULL) {
         std::cerr << "Error: cannot open file displacement.bin" << std::endl;
         return;
     }
@@ -90,7 +94,7 @@ void read_displacement(const std::string &data_dir,
     }
 }
 
-void read_material(const std::string &data_dir, 
+void read_material(const std::string &data_dir,
                    std::vector<std::vector<double>> &material) {
     std::vector<double> buf_material(3 * material.size());
     FILE *fp;
@@ -117,11 +121,10 @@ void read_material(const std::string &data_dir,
             std::cout << material[imaterial][idim] << " ";
         }
         std::cout << std::endl;
-    }   
+    }
 }
 
-void read_load_elem(const std::string &data_dir, 
-                    const int &nelem, 
+void read_load_elem(const std::string &data_dir, const int &nelem,
                     std::vector<int> &load_elem) {
     FILE *fp;
     if ((fp = fopen((data_dir + "load_elem.bin").c_str(), "r")) == NULL) {
@@ -132,17 +135,19 @@ void read_load_elem(const std::string &data_dir,
     fclose(fp);
 }
 
-void read_marked_elem(const std::string &data_dir,
-                      const int &nelem_marked,
+void read_marked_elem(const std::string &data_dir, const int &nelem_marked,
                       std::vector<int> &marked_elem) {
     FILE *fp;
-    if ((fp = fopen((data_dir + "marked_elem_quad.bin").c_str(), "r")) == NULL) {
-        std::cerr << "Error: cannot open file marked_elem_quad.bin" << std::endl;
+    if ((fp = fopen((data_dir + "marked_elem_quad.bin").c_str(), "r")) ==
+        NULL) {
+        std::cerr << "Error: cannot open file marked_elem_quad.bin"
+                  << std::endl;
         return;
     }
     fread(&marked_elem[0], sizeof(int), nelem_marked, fp);
     for (int ielem = 0; ielem < nelem_marked; ielem++) {
         marked_elem[ielem] -= 1;
+        std::cout << "marked_elem: " << marked_elem[ielem] << std::endl;
     }
     fclose(fp);
 }
@@ -200,4 +205,16 @@ void read_tet_flag(const std::string &data_dir,
     } else {
         std::cout << "this is 1st iteration of refinement" << std::endl;
     }
+
+void read_nload(int &nload) {
+    std::ifstream ifs("data/pointload.dat");
+    if (!ifs) {
+        std::cerr << "Error: cannot open file nload.dat" << std::endl;
+        return;
+    }
+
+    std::string buf;
+    getline(ifs, buf);  // read "nload"
+    getline(ifs, buf);  // read nload
+    nload = std::stoi(buf);
 }

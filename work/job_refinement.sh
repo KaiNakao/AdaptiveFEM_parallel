@@ -18,30 +18,30 @@ export OMP_NUM_THREADS=1
 export OMP_STACKSIZE=1G
 ulimit -s unlimited
 
-mkdir -p ../tmp
-cd ../tmp
+mkdir -p ../${WORKDIR}_tmp
+cd ../${WORKDIR}_tmp
 mv ../work/${WORKDIR}/* ./
 
 # merge local results
 echo "merge local results"
-julia ../merge_local_result/to_AFEM.jl
+julia ../merge_local_result/to_AFEM.jl > merge_local_result.log
 
-# error analysis and mesh refinement
-echo "error analysis and mesh refinement"
+# mesh refinement
+echo "mesh refinement"
 cd ../refiner
 make clean
 make
-cd ../tmp
-../refiner/main
+cd ../${WORKDIR}_tmp
+../refiner/main > refiner.log
 
-mkdir result/vtu
-mkdir result/fig
-cd ../refiner
-julia write_mesh.jl
-julia fig_out.jl
+mkdir -p result/vtu
+mkdir -p result/fig
+# cd ../refiner
+julia ../refiner/write_mesh.jl
+julia ../refiner/fig_out.jl
 
 cd ../work
 cd ${WORKDIR}
-mv -f ../../tmp/* ./
-rm -rf   ../../tmp
+mv -f ../../${WORKDIR}_tmp/* ./
+rm -rf   ../../${WORKDIR}_tmp
 

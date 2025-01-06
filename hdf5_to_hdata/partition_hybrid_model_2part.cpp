@@ -39,6 +39,10 @@
 // #define USE_2STAGE
 // #define PART_LIQ
 
+#ifdef NO_SURFACE
+#define DEBUG_NO_SURFACE
+#endif
+
 //-----------------------------------------------------------
 // Other debug flags
 // #define DEBUG_NO_HDF5
