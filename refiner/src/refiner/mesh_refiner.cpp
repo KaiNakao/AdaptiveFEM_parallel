@@ -43,10 +43,20 @@ Refiner::Refiner(const std::string &data_dir)
     m_elem_to_scheme = elem_to_scheme;
 
     std::cout << " Reading marked elements..." << std::endl;
-    std::vector<int> marked_elems(num_elem_marked, sizeof(int));
+    std::vector<int> marked_elems(num_elem_marked);
     read_marked_elem(data_dir, num_elem_marked, marked_elems);
     m_marked_elems_id = marked_elems;
 
+    std::cout << " Reading refinement/marked edge..." << std::endl;
+    std::vector<std::vector<int>> refinement_edge(num_elem, std::vector<int>(2));
+    std::vector<std::vector<std::vector<int>>> marked_edge(num_elem, std::vector<std::vector<int>>(4, std::vector<int>(2)));
+    std::vector<bool> tet_flag(num_elem);
+    read_refinement_edge(data_dir, num_elem, refinement_edge);
+    read_marked_edge(data_dir, num_elem, marked_edge);
+    read_tet_flag(data_dir, num_elem, tet_flag);
+    m_refinement_edge = refinement_edge;
+    m_marked_edge = marked_edge;
+    m_tet_flag = tet_flag;
 }
 
 // MAIN ROUTINE for Refiner
@@ -139,8 +149,14 @@ void Refiner::executeRefinement()
     std::vector<int> new_matid_arr;
     std::vector<std::vector<int>> new_connectivity;
     std::vector<std::vector<double>> new_coordinates;
+    std::vector<std::vector<int>> refinement_edge;
+    std::vector<std::vector<std::vector<int>>> marked_edge;
+    std::vector<bool> tet_flag;
+    refinement_edge = m_refinement_edge;
+    marked_edge = m_marked_edge;
+    tet_flag = m_tet_flag;
     std::vector<int> original;  // flag  0 を拾う
-    refinement_scheme.executeRefinement_bisect(new_connectivity, new_coordinates, new_matid_arr, original);
+    refinement_scheme.executeRefinement_bisect(new_connectivity, new_coordinates, new_matid_arr, original, refinement_edge, marked_edge, tet_flag);
     std::cout << "original - 130228 " << original[130228] << std::endl;
     //output aspect ratio
     ofs.open(m_data_dir + "aspect_ratio_2.bin", std::ios::binary);
@@ -220,6 +236,7 @@ void Refiner::executeRefinement()
     }
     ofs.close();
 
+    std::cout << "writing new connectivity edge...size: " << renew_connectivity.size() << std::endl;
     ofs.open(m_data_dir + "new_connectivity.bin", std::ios::binary);
     if (!ofs) {
         std::cerr << "Error opening file for new_connectivity" << std::endl;
@@ -282,6 +299,35 @@ void Refiner::executeRefinement()
     }
     ofs.close();
 
+    //output refinement edge
+    std::cout << "writing refinement edge...size: " << refinement_edge.size() << std::endl;
+    ofs.open(m_data_dir + "refinement_edge.bin", std::ios::binary);
+    if (!ofs) {
+        std::cerr << "Error opening file for refinement_edge" << std::endl;
+        return;
+    }
+    for (int ielem=0; ielem<refinement_edge.size(); ielem++) {
+        for (int inode=0; inode<2; inode++) {
+            ofs.write(reinterpret_cast<const char*>(&refinement_edge[ielem][inode]), sizeof(int));
+        }
+    }
+    ofs.close();
+
+    //output marked edge
+    std::cout << "writing marked edge... size: " << marked_edge.size() << std::endl;
+    ofs.open(m_data_dir + "marked_edge.bin", std::ios::binary);
+    if (!ofs) {
+        std::cerr << "Error opening file for marked_edge" << std::endl;
+        return;
+    }
+    for (int ielem=0; ielem<marked_edge.size(); ielem++) {
+        for (int iface=0; iface<4; iface++) {
+            for (int inode=0; inode<2; inode++) {
+                ofs.write(reinterpret_cast<const char*>(&marked_edge[ielem][iface][inode]), sizeof(int));
+            }
+        }
+    }
+    ofs.close();
 }
 
 int Refiner::switchScheme(int _elem_id)

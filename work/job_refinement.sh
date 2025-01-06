@@ -29,6 +29,7 @@ julia ../merge_local_result/to_AFEM.jl > merge_local_result.log
 # mesh refinement
 echo "mesh refinement"
 cd ../refiner
+make clean
 make
 cd ../${WORKDIR}_tmp
 ../refiner/main > refiner.log

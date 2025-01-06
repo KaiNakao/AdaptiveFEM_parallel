@@ -152,6 +152,64 @@ void read_marked_elem(const std::string &data_dir, const int &nelem_marked,
     fclose(fp);
 }
 
+void read_refinement_edge(const std::string &data_dir,
+                          const int &nelem,
+                          std::vector<std::vector<int>> &refinement_edge) {
+    std::vector<int> buf_refienment_edge(2 * nelem, -1);
+    FILE *fp;
+    if ((fp = fopen((data_dir + "refienment_edge.bin").c_str(), "r")) != NULL) {
+        fread(&buf_refienment_edge[0], sizeof(int), 2 * nelem, fp);
+        fclose(fp);
+    } else {
+        std::cout << "this is 1st iteration of refinement" << std::endl;
+    }
+
+    for (int ielem = 0; ielem < nelem; ielem++) {
+        for (int inode = 0; inode < 2; inode++) {
+            refinement_edge[ielem][inode] = buf_refienment_edge[ielem * 2 + inode];
+        }
+    }
+}
+
+void read_marked_edge(const std::string &data_dir,
+                      const int &nelem,
+                      std::vector<std::vector<std::vector<int>>> &marked_edge) {
+    std::vector<int> buf_marked_edge(2 * 4 * nelem, -1);
+    FILE *fp;
+    if ((fp = fopen((data_dir + "marked_edge.bin").c_str(), "r")) != NULL) {
+        fread(&buf_marked_edge[0], sizeof(int), 2 * 4 * nelem, fp);
+        fclose(fp);
+    } else {
+        std::cout << "this is 1st iteration of refinement" << std::endl;
+    }
+
+    for (int ielem = 0; ielem < nelem; ielem++) {
+        for (int iface = 0; iface < 4; iface++) {
+            for (int inode = 0; inode < 2; inode++) {
+                marked_edge[ielem][iface][inode] = buf_marked_edge[ielem * 8 + iface * 2 + inode];
+            }
+        }
+    }
+}
+
+void read_tet_flag(const std::string &data_dir,
+                   const int &nelem,
+                   std::vector<bool> &tet_flag) {
+    std::vector<bool> buf_tet_flag(nelem, false);
+    FILE *fp;
+    if ((fp = fopen((data_dir + "refienment_edge.bin").c_str(), "r")) != NULL) {
+        std::vector<char> temp_buf(nelem, 0);
+        size_t read_count = fread(temp_buf.data(), sizeof(char), nelem, fp);
+        for (int i = 0; i < read_count; ++i) {
+            buf_tet_flag[i] = static_cast<bool>(temp_buf[i]);
+        }
+        fclose(fp);
+    } else {
+        std::cout << "this is 1st iteration of refinement" << std::endl;
+    }
+    tet_flag = buf_tet_flag;
+}
+
 void read_nload(int &nload) {
     std::ifstream ifs("data/pointload.dat");
     if (!ifs) {
