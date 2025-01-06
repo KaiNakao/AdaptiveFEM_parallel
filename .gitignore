@@ -2,6 +2,7 @@
 !*/
 
 !coord_trans/*
+!coord_trans/original/*.dat
 
 !dem_to_hdf5/*.sh
 !dem_to_hdf5/*.F
