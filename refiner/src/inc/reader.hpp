@@ -35,3 +35,5 @@ void read_marked_edge(const std::string &data_dir,
 void read_tet_flag(const std::string &data_dir,
                    const int &nelem,
                    std::vector<bool> &tet_flag);
+
+void read_nload(int &nload);

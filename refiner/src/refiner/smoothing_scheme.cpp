@@ -181,7 +181,7 @@ void SmoothingScheme::createMovableTabel() {
         if (materials.size() > 1)  // material boundary
         {
             m_node_movable[node] = false;
-        } else if (flag_boundary == 1)  // regional boundary
+        } else if (flag_boundary == 1)   // regional boundary
         {
             m_node_movable[node] = false;
         } else {

@@ -44,6 +44,18 @@ void posterior_error_estimation(
                 }
             }
 
+            double ave_disp = 0.;
+            for (int inode = 0; inode < 10; inode++) {
+                double disp_norm = 0;
+                for (int idim = 0; idim < 3; idim++) {
+                    disp_norm += displacement[elem[inode]][idim] * displacement[elem[inode]][idim];   ////節点変位を取ってくる
+                }
+                disp_norm = sqrt(disp_norm);
+                ave_disp += disp_norm;
+            }
+            ave_disp = ave_disp / 10;
+
+
             double rk = rk_arr[ielem];
             double hk = calc_hk(xnode);
 
@@ -61,8 +73,8 @@ void posterior_error_estimation(
                 eta += beta * he * re;
             }
 
-            eta = sqrt(eta);
-            eta_arr[ielem] = std::max(eta_arr[ielem], eta);
+            eta = sqrt(eta) / ave_disp;
+            eta_arr[ielem] = std::max(eta_arr[ielem], eta); ////////////
         }
     }
 }

@@ -70,8 +70,8 @@ max_lat = 43.7
 # ds = 1000.
 # ds = 2500.
 
-ds = 5000.
-# ds = 10000.
+#ds = 5000.
+ds = 10000.
 
 # number of layers for JIVSM
 nlayer = 23
