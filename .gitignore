@@ -58,6 +58,11 @@
 !error_estimator/*.c
 !error_estimator/*.sh
 
+!obs_displacement/*.sh
+!obs_displacement/*.c
+!obs_displacement/*.cpp
+!obs_displacement/*.hpp
+
 
 !work/*.sh
 

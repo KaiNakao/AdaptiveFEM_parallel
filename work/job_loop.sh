@@ -41,6 +41,13 @@ cd ../${WORKDIR}_tmp
 export OMP_NUM_THREADS=80
 ../dem_to_hdf5/modeling_hybrid_hdf.exe > dem_to_hdf5.log
 
+# generate observation points
+echo "generate observation points"
+cd ../obs_displacement
+icpx -O3 gen_obs_points.cpp -o gen_obs_points
+cd ../${WORKDIR}_tmp
+../obs_displacement/gen_obs_points > gen_obs_points.log
+
 for iter in {1..5}
 do
     echo "iteration: ${iter}"
@@ -90,6 +97,13 @@ do
     cd ../${WORKDIR}_tmp
     mpiexec -n ${NPART} ../error_estimator/main > error_estimator.log
 
+    # displacement at observation points
+    echo "displacement at observation points"
+    cd ../obs_displacement
+    ./compile_ibis.sh
+    cd ../${WORKDIR}_tmp
+    mpiexec -n ${NPART} ../obs_displacement/obs_displacement > obs_displacement.log
+
     # merge local results
     echo "merge local results"
     julia ../merge_local_result/to_AFEM.jl > merge_local_result.log
@@ -130,6 +144,7 @@ do
     cp ../../${WORKDIR_ORG}_tmp/data/modeling_setting.dat ./data/
     cp ../../${WORKDIR_ORG}_tmp/data/para_setting.dat ./data/
     cp ../../${WORKDIR_ORG}_tmp/data/pointload.dat ./data/
+    cp ../../${WORKDIR_ORG}_tmp/data/obs_points.dat ./data/
 
     # reduce ds in modeling_setting.dat to half
     file="data/modeling_setting.dat"
