@@ -2,14 +2,14 @@
 #PBS -j oe
 #PBS -q calc
 ##PBS -N hpl
-#PBS -l select=1:ncpus=80:mpiprocs=20
+#PBS -l select=4:ncpus=80:mpiprocs=20
 
 #########################################################
-export WORKDIR=work3
+export WORKDIR=work1
 echo "WORKDIR: ${WORKDIR}"
 
 # number of partitions
-export NPART=16
+export NPART=64
 echo "NPART: ${NPART}"
 cd ${PBS_O_WORKDIR}
 
@@ -53,6 +53,13 @@ cd ../error_estimator
 ./compile_ibis.sh
 cd ../${WORKDIR}_tmp
 mpiexec -n ${NPART} ../error_estimator/main > error_estimator.log
+
+# displacement at observation points
+echo "displacement at observation points"
+cd ../obs_displacement
+./compile_ibis.sh
+cd ../${WORKDIR}_tmp
+mpiexec -n ${NPART} ../obs_displacement/obs_displacement > obs_displacement.log
 
 cd ../work
 cd ${WORKDIR}

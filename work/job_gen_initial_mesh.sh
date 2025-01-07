@@ -2,11 +2,11 @@
 #PBS -j oe
 #PBS -q calc
 ##PBS -N hpl
-#PBS -l select=1:ncpus=80:mpiprocs=80
+#PBS -l select=4:ncpus=80:mpiprocs=80
 
 #########################################################
 # check DNSQUASH in compile_modeling_x86-64_ibis.sh #
-export WORKDIR=work3
+export WORKDIR=work1
 echo "WORKDIR: ${WORKDIR}"
 
 # number of partitions
@@ -53,6 +53,13 @@ cd ../hdf5_to_hdata/
 cd ../${WORKDIR}_tmp
 export OMP_NUM_THREADS=1
 ../hdf5_to_hdata/partition_hybrid_model_2part.exe > hdf5_to_hdata.log
+
+# generate observation points
+echo "generate observation points"
+cd ../obs_displacement
+icpx -O3 gen_obs_points.cpp -o gen_obs_points
+cd ../${WORKDIR}_tmp
+../obs_displacement/gen_obs_points > gen_obs_points.log
 
 cd ../work
 mkdir -p ${WORKDIR}

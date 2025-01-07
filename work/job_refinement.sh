@@ -2,7 +2,7 @@
 #PBS -j oe
 #PBS -q calc
 ##PBS -N hpl
-#PBS -l select=1:ncpus=80:mpiprocs=80
+#PBS -l select=4:ncpus=80:mpiprocs=80
 
 #########################################################
 export WORKDIR=work3
