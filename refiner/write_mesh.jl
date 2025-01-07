@@ -21,6 +21,9 @@ function write_mesh(data_dir)
     # @show size(displacement)
 
     @show "number of element: ", size(cny, 2)
+    marked_flag = zeros(Int32, size(cny, 2))
+    marked_flag[marked_elem] .= 1
+    @show size(marked_elem)
 
     # cells = [MeshCell(VTKCellTypes.VTK_QUADRATIC_TETRA, cny[:, i]) for i = 1:size(cny, 2)]
     cells = [MeshCell(VTKCellTypes.VTK_TETRA, cny[:, i]) for i = 1:size(cny, 2)]
@@ -31,7 +34,7 @@ function write_mesh(data_dir)
         # vtk["displacement_x"] = displacement[1, :]
         # vtk["displacement_y"] = displacement[2, :]
         # vtk["displacement_z"] = displacement[3, :]
-        vtk["marked_flag"] = marked_elem
+        vtk["marked_flag"] = marked_flag
         vtk["load_elem"] = load_elem
         vtk["surf_elem"] = surf_elem
         vtk["partition"] = partition
