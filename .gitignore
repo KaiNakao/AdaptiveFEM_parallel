@@ -65,6 +65,7 @@
 
 
 !work/*.sh
+!work/*.ipynb
 
 !/.gitignore
 !/README.md
