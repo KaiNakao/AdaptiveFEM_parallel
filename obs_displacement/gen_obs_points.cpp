@@ -53,39 +53,23 @@ int main() {
     std::cout << "zmax: " << zmax << std::endl;
 
     // generate observation points
-    std::vector<double> x_obs;
-    std::vector<double> y_obs;
-    std::vector<double> z_obs;
+    std::vector<double> x_obs = {6e4,  7e4,  8e4,  9e4,  10e4, 11e4, 12e4,
+                                 13e4, 14e4, 15e4, 16e4, 17e4, 18e4};
+    std::vector<double> y_obs = {5e4,  6e4,  7e4,  8e4,  9e4,  10e4,
+                                 11e4, 12e4, 13e4, 14e4, 15e4, 16e4};
+    std::vector<double> z_obs = {20e4, 21e4, 22e4, 23e4, 24e4, 25e4, 26e4};
 
-    double x = (xmin + xmax) / 2.0 - 60000.0;
-    x = x - fmod(x, 10000.0);
-    while (x < (xmin + xmax) / 2.0 + 60000.0) {
-        x_obs.push_back(x);
-        x += 10000.0;
+    if (x_obs[0] < xmin || x_obs.back() > xmax) {
+        std::cerr << "Error: x_obs is out of model domain." << std::endl;
+        std::exit(1);
     }
-    double y = (ymin + ymax) / 2.0 - 60000.0;
-    y = y - fmod(y, 10000.0);
-    while (y < (ymin + ymax) / 2.0 + 60000.0) {
-        y_obs.push_back(y);
-        y += 10000.0;
+    if (y_obs[0] < ymin || y_obs.back() > ymax) {
+        std::cerr << "Error: y_obs is out of model domain." << std::endl;
+        std::exit(1);
     }
-    double z = zmax - 60000.0;
-    z = z - fmod(z, 10000.0);
-    while (z < zmax) {
-        z_obs.push_back(z);
-        z += 10000.0;
-    }
-    std::cout << "x_obs.size(): " << x_obs.size() << std::endl;
-    for (int i = 0; i < x_obs.size(); i++) {
-        std::cout << x_obs[i] << std::endl;
-    }
-    std::cout << "y_obs.size(): " << y_obs.size() << std::endl;
-    for (int i = 0; i < y_obs.size(); i++) {
-        std::cout << y_obs[i] << std::endl;
-    }
-    std::cout << "z_obs.size(): " << z_obs.size() << std::endl;
-    for (int i = 0; i < z_obs.size(); i++) {
-        std::cout << z_obs[i] << std::endl;
+    if (z_obs[0] < zmin || z_obs.back() > zmax) {
+        std::cerr << "Error: z_obs is out of model domain." << std::endl;
+        std::exit(1);
     }
 
     // write observation points
