@@ -224,7 +224,8 @@
 !      REAL_4 cooris(3,n_size+ni_size)
 
 ! #define CRSSIZE 200
-#define CRSSIZE 1000
+! #define CRSSIZE 1000
+#define CRSSIZE 5000
 !#define nsta 5
 
       integer ne4_size,n4_size,ni4_size,nei4_size,n4,ne4,ni4,nei4
