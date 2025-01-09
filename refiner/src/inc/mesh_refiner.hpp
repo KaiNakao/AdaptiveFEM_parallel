@@ -43,7 +43,7 @@ private: // private member variable
     std::vector<int> m_marked_elems_id;                // size: number of MARKED elements
     std::vector<int> m_matid_arr;                      // size: number of elements
     std::map<std::set<int>, std::vector<int>> m_face_to_elems; // face to elements
-    std::map<int, std::vector<std::set<int>>> m_node_to_faces;
+    std::map<int, std::set<std::set<int>>> m_node_to_faces;
 
     // general info
     std::set<int> m_elem_refine;                       // element ids to be refined (node addition) <- not changed from initial data

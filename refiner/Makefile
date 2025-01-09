@@ -2,7 +2,8 @@
 ####### Compiler, tools and options
 
 CXX           = icpx
-CXXFLAGS      = -Wall -W -mcmodel=large -O3 -std=c++17 -qopenmp -mkl -DNO_SMOOTHING
+#CXXFLAGS      = -Wall -W -mcmodel=large -O3 -std=c++17 -qopenmp -mkl -DNO_SMOOTHING
+CXXFLAGS      = -Wall -W -mcmodel=large -O3 -std=c++17 -qopenmp -mkl
 # CXXFLAGS      = -Wall -W -mcmodel=large -g -std=c++17 -qopenmp -mkl
 INCPATH       = -I./src/inc
 TAR           = tar -cf

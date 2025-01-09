@@ -21,7 +21,7 @@ Refiner::Refiner(const std::string &data_dir)
     std::vector<std::vector<int>> adj_elems(num_elem, std::vector<int>(4));
     std::vector<int> matid_arr(num_elem);
     std::map<std::set<int>, std::vector<int>> face_to_elems;
-    std::map<int, std::vector<std::set<int>>> node_to_faces;
+    std::map<int, std::set<std::set<int>>> node_to_faces;
     read_mesh(data_dir, num_elem, num_node_linear, cny, coor, matid_arr);
     search_adj_element(cny, coor, adj_elems, face_to_elems, node_to_faces);
     m_face_to_elems = face_to_elems;
@@ -187,7 +187,7 @@ void Refiner::executeRefinement()
     }
     std::vector<std::vector<int>> new_adj_elements(new_connectivity.size(), std::vector<int>(4));
     std::map<std::set<int>, std::vector<int>> new_face_to_elems;
-    std::map<int, std::vector<std::set<int>>> new_node_to_faces;
+    std::map<int, std::set<std::set<int>>> new_node_to_faces;
     search_adj_element( new_connectivity, new_coordinates, new_adj_elements, new_face_to_elems, new_node_to_faces);
     std::vector<std::vector<int>> renew_connectivity;
     std::vector<std::vector<double>> renew_coordinates;

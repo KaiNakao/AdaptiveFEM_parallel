@@ -36,7 +36,7 @@ ErrorEstimator::ErrorEstimator(const std::string &data_dir) {
 
     std::vector<std::vector<int>> adj_elem(nelem, std::vector<int>(4));
     std::map<std::set<int>, std::vector<int>> face_to_elems;
-    std::map<int, std::vector<std::set<int>>> node_to_faces;
+    std::map<int, std::set<std::set<int>>> node_to_faces;
     search_adj_element(cny, coor, adj_elem, face_to_elems, node_to_faces);
 
     std::vector<double> eta_arr;

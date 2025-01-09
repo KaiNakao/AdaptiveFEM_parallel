@@ -5,7 +5,7 @@ SmoothingScheme::SmoothingScheme(
     std::vector<std::vector<int>> &connectivity,
     std::vector<std::vector<double>> &coordinates, std::vector<int> &matid_arr,
     std::map<std::set<int>, std::vector<int>> &face_to_elems,
-    std::map<int, std::vector<std::set<int>>> &node_to_faces,
+    std::map<int, std::set<std::set<int>>> &node_to_faces,
     std::vector<std::vector<int>> &adj_elems) {
     std::cout << "smoothing constructor" << std::endl;
     std::vector<std::vector<int>> connectivity_tmp(connectivity.size(),
@@ -42,9 +42,9 @@ void SmoothingScheme::executeSmoothing(
     std::vector<std::vector<double>> &new_coor) {
     std::cout << "executing smoothing" << std::endl;
     int max_iter = 200;
-#ifdef NO_SMOOTHING
-    max_iter = 0;
-#endif
+//#ifdef NO_SMOOTHING
+//    max_iter = 0;
+//#endif
     search_adj_nodes();
     fetchNodes();
     createMovableTabel();
@@ -83,10 +83,6 @@ void SmoothingScheme::fetchNodes() {
         int elem = m_elem_smooth[ielem];
         for (int inode = 0; inode < 4; ++inode) {
             m_node_smooth.insert(m_connectivity[elem][inode]);
-            if (elem > 130000 && elem < 13500) {
-                std::cout << elem << std::endl;
-                std::cout << m_connectivity[elem][inode] << std::endl;
-            }
         }
 
         std::vector<int> adj_elems = m_adj_elements[elem];
@@ -136,11 +132,11 @@ void SmoothingScheme::moveNodes() {
     for (int inode : m_node_smooth) {
         if (m_node_movable[inode]) {
             moving_direction = calculateMovingDirection(inode);
-            for (int idim = 0; idim < 3; ++idim) {
+            //for (int idim = 0; idim < 3; ++idim) {
                 // std::cout << "mv " << moving_direction[idim] << std::endl;
-                new_coordinates[inode][idim] += lmd * moving_direction[idim];
-            }
-            // new_coordinates[inode][2] += lmd * moving_direction[2];
+            //    new_coordinates[inode][idim] += lmd * moving_direction[idim];
+            //}
+            new_coordinates[inode][2] += lmd * moving_direction[2];
         }
     }
     m_coordinates_prev = m_coordinates;
@@ -164,17 +160,17 @@ void SmoothingScheme::search_adj_nodes() {
 void SmoothingScheme::createMovableTabel() {
     int count = 0;
     for (int node : m_node_smooth) {
-        std::vector<std::set<int>> faces = m_node_to_faces[node];
+        std::set<std::set<int>> faces = m_node_to_faces[node];
         std::set<int> materials;
         int flag_boundary = 0;
-        for (int iface = 0; iface < faces.size(); ++iface) {
-            std::set<int> face = faces[iface];
+        for (std::set<int> face : faces) {
             std::vector<int> elems = m_face_to_elems[face];
             for (int ielem = 0; ielem < elems.size(); ++ielem) {
                 materials.insert(m_matid_map[elems[ielem]]);
             }
             if (elems.size() == 1) {
                 flag_boundary = 1;
+                //std::cout << "top surface " << m_coordinates[node][0] << " " << m_coordinates[node][1] << " " << m_coordinates[node][2] << std::endl;
             }
         }
 
@@ -187,6 +183,29 @@ void SmoothingScheme::createMovableTabel() {
         } else {
             m_node_movable[node] = true;
             count++;
+        }
+
+        std::set<int> debug{16429, 16430, 16609, 16633, 16656, 16786};
+        if (debug.count(node) == 1){
+            std::cout << "node id " << node << std::endl;
+            std::cout << "  x " << m_coordinates[node][0] << std::endl;
+            std::cout << "  y " << m_coordinates[node][1] << std::endl;
+            std::cout << "  z " << m_coordinates[node][2] << std::endl;
+            std::cout << "  judge " << m_node_movable[node] << std::endl;
+            std::cout << "  number of materials " << materials.size() << std::endl;
+            std::cout << "  boundary flag " << flag_boundary << std::endl;
+            for (std::set<int> face_db : faces) {
+                std::vector<int> elems_db = m_face_to_elems[face_db];
+                std::cout << "    face " << std::endl;
+                for (int fnode : face_db) {
+                    std::cout << m_coordinates[fnode][0] << " " << m_coordinates[fnode][1] << " " << m_coordinates[fnode][2] << std::endl;
+                }
+                std::cout << "      elems ";
+                for (int ifelem : elems_db) {
+                    std::cout << ifelem << " ";
+                } 
+                std::cout << std::endl;
+            }
         }
     }
     std::cout << "movable point count: " << count << " / "

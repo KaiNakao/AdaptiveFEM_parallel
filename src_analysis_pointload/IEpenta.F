@@ -73,6 +73,11 @@ c
       flag=0
       do i=1,n
       if(abs(coor(idcoor(id),i)-plane(id)).le.ds*0.01)then
+      if(abs(coor(idcoor(id),i)-plane(id)).ge.ds*1e-8)then
+      write(*,*) "!!!!!!!!!!!!!!!!!!!!!, "
+      write(*,*) coor(idcoor(id),i), plane(id), id
+      write(*,*) coor(1,i), coor(2,i), coor(3,i)
+      endif
       inum=inum+1
       flag(i)=inum
       coori(1:3, inum) = coor(1:3,i)
