@@ -59,7 +59,8 @@ void SmoothingScheme::executeSmoothing(
                       << "max_aspect_ratio: " << max_aspect_ratio;
             std::cout << " total distance: " << euclidian_norm << std::endl;
         }
-        if (max_aspect_ratio > prev_aspect_ratio) {
+        if ((prev_aspect_ratio - max_aspect_ratio)/prev_aspect_ratio < 1e-2) {
+            m_coordinates = m_coordinates_prev;
             break;
         }
         prev_aspect_ratio = max_aspect_ratio;
@@ -185,7 +186,7 @@ void SmoothingScheme::createMovableTabel() {
             count++;
         }
 
-        std::set<int> debug{16429, 16430, 16609, 16633, 16656, 16786};
+        std::set<int> debug{};
         if (debug.count(node) == 1){
             std::cout << "node id " << node << std::endl;
             std::cout << "  x " << m_coordinates[node][0] << std::endl;
