@@ -5,7 +5,7 @@
 #PBS -l select=4:ncpus=80:mpiprocs=20
 
 #########################################################
-export WORKDIR=work1
+export WORKDIR=work_5000_1
 echo "WORKDIR: ${WORKDIR}"
 
 # number of partitions
@@ -48,7 +48,7 @@ icpx -O3 gen_obs_points.cpp -o gen_obs_points
 cd ../${WORKDIR}_tmp
 ../obs_displacement/gen_obs_points > gen_obs_points.log
 
-for iter in {1..10}
+for iter in {1..15}
 do
     echo "iteration: ${iter}"
     # check surface
@@ -104,6 +104,13 @@ do
     cd ../${WORKDIR}_tmp
     mpiexec -n ${NPART} ../obs_displacement/obs_displacement > obs_displacement.log
 
+    # ground surface response by centroid
+    echo "ground surface response by centroid"
+    cd ../calc_greens_function
+    ifx -O3 main.F90 -o calc_greens_function
+    cd ../${WORKDIR}_tmp
+    ../calc_greens_function/calc_greens_function > calc_greens_function.log
+
     # merge local results
     echo "merge local results"
     julia ../merge_local_result/to_AFEM.jl > merge_local_result.log
@@ -145,6 +152,7 @@ do
     cp ../../${WORKDIR_ORG}_tmp/data/para_setting.dat ./data/
     cp ../../${WORKDIR_ORG}_tmp/data/pointload.dat ./data/
     cp ../../${WORKDIR_ORG}_tmp/data/obs_points.dat ./data/
+    cp ../../${WORKDIR_ORG}_tmp/data/target_centroid.dat ./data/
 
     # reduce ds in modeling_setting.dat to half
     file="data/modeling_setting.dat"

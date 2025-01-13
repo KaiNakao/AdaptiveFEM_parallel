@@ -72,6 +72,47 @@ int main() {
         std::exit(1);
     }
 
+    std::vector<std::vector<double>> obs_points;
+    for (int i = 0; i < x_obs.size(); i++) {
+        for (int j = 0; j < y_obs.size(); j++) {
+            for (int k = 0; k < z_obs.size(); k++) {
+                obs_points.push_back({x_obs[i], y_obs[j], z_obs[k]});
+            }
+        }
+    }
+
+    // centroid
+    std::vector<double> centroid(3, 0.0);
+    filename = "data/target_centroid.dat";
+    ifs.open(filename);
+    if (!ifs) {
+        std::cerr << "Error: file " << filename << " not found." << std::endl;
+        std::exit(1);
+    }
+    getline(ifs, buf);  // centroid coordinate
+    for (int idim = 0; idim < 3; idim++) {
+        getline(ifs, buf);
+        centroid[idim] = std::stod(buf);
+    }
+    ifs.close();
+
+    double x1, x2, y1, y2, z1, z2;
+    x1 = int(centroid[0] / 5e3) * 5e3;
+    x2 = x1 + 5e3;
+    y1 = int(centroid[1] / 5e3) * 5e3;
+    y2 = y1 + 5e3;
+    z1 = int(centroid[2] / 5e3) * 5e3;
+    z2 = z1 + 5e3;
+
+    obs_points.push_back({x1, y1, z1});
+    obs_points.push_back({x2, y1, z1});
+    obs_points.push_back({x2, y2, z1});
+    obs_points.push_back({x1, y2, z1});
+    obs_points.push_back({x1, y1, z2});
+    obs_points.push_back({x2, y1, z2});
+    obs_points.push_back({x2, y2, z2});
+    obs_points.push_back({x1, y2, z2});
+
     // write observation points
     filename = "data/obs_points.dat";
     std::ofstream ofs;
@@ -82,15 +123,11 @@ int main() {
         std::exit(1);
     }
     ofs << "number of observation points" << std::endl;
-    ofs << x_obs.size() * y_obs.size() * z_obs.size() << std::endl;
+    ofs << obs_points.size() << std::endl;
     ofs << "x, y, z" << std::endl;
-    for (int i = 0; i < x_obs.size(); i++) {
-        for (int j = 0; j < y_obs.size(); j++) {
-            for (int k = 0; k < z_obs.size(); k++) {
-                ofs << x_obs[i] << " " << y_obs[j] << " " << z_obs[k]
-                    << std::endl;
-            }
-        }
+    for (int iobs = 0; iobs < obs_points.size(); iobs++) {
+        ofs << obs_points[iobs][0] << " " << obs_points[iobs][1] << " "
+            << obs_points[iobs][2] << std::endl;
     }
     ofs.close();
 }
