@@ -63,6 +63,7 @@
 !obs_displacement/*.cpp
 !obs_displacement/*.hpp
 
+!calc_greens_function/main.F90
 
 !work/*.sh
 !work/*.ipynb

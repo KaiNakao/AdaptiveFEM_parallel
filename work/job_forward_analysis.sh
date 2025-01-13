@@ -61,6 +61,13 @@ cd ../obs_displacement
 cd ../${WORKDIR}_tmp
 mpiexec -n ${NPART} ../obs_displacement/obs_displacement > obs_displacement.log
 
+# ground surface response by centroid
+echo "ground surface response by centroid"
+cd ../calc_greens_function
+ifx -O3 main.F90 -o calc_greens_function
+cd ../${WORKDIR}_tmp
+../calc_greens_function/calc_greens_function > calc_greens_function.log
+
 cd ../work
 cd ${WORKDIR}
 mv ../../${WORKDIR}_tmp/* ./

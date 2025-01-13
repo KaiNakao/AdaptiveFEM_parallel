@@ -67,11 +67,19 @@ max_lat = 43.7
 # max_lat = 44.0
 
 # grid size
-# ds = 1000.
-# ds = 2500.
+ds = 5000.
 
-#ds = 5000.
-ds = 10000.
+# target moment tensor (iburi earthquake)
+target_lat = 42.65
+target_lon = 142.0
+target_depth = 25000.0
+target_mxx = -4.015133102514872E+018 
+target_myy = -2.333685398756124E+017 
+target_mzz = 4.248501642390483E+018
+target_mxy = -3.411506076846931E+018 
+target_myz = -7.001746816076248E+017 
+target_mzx = 6.827618819906044E+018
+target_mvec = np.array([target_mxx, target_myy, target_mzz, target_mxy, target_myz, target_mzx])
 
 # number of layers for JIVSM
 nlayer = 23
@@ -324,6 +332,25 @@ df_gnss_out.to_csv("data/observation_gnss.dat", index=False, sep=" ")
 df_obs = pd.concat([df_gnss_out])
 df_obs.to_csv("data/observation.dat", index=False, sep=" ")
 
+# coordinate of centroid
+lat = [target_lat]
+lon = [target_lon]
+with open("../gsigeo2011_ver2_1_asc/program/input.dat", "w") as f:
+    for i in range(len(lat)):
+        j = (i + 1) // 10000
+        num = f'{j:4}'
+        name = f'{j:18}'
+        lat_str = f'{to_dms(lat[i]):15.04f}'
+        lon_str = f'{to_dms(lon[i]):15.04f}'
+        f.write(num + name + lat_str + lon_str + "\n")
+subprocess.run(["./gsigeome_asc", "input.dat", "output.dat", "gsigeo2011_ver2_1.asc"],
+                cwd="../gsigeo2011_ver2_1_asc/program")
+geoid = np.loadtxt(
+    "../gsigeo2011_ver2_1_asc/program/output.dat")[4]
+target_geoid = geoid
+target_h = -target_depth + target_geoid
+target_xyz = lonlat_to_local(target_lat, target_lon, target_h, lat_c, lon_c, h_c)
+
 # find max/min of x and y
 xmin = int(min(min(layer[:,0]) for layer in layers))
 xmax = int(max(max(layer[:,0]) for layer in layers))
@@ -369,7 +396,6 @@ for i in range(nlayer):
 # deletion layer 13
 for i in range(layers_new[14].shape[0]):
     layers_new[13][i, 2] = layers_new[12][i, 2]
-
 
 # output
 for i in range(nlayer):
@@ -437,3 +463,13 @@ with open("data/pointload.dat", "w") as f:
         ey = eyvec[iobs]
         ez = ezvec[iobs]
         f.write("%f %f %f %f %f\n" % (x, y, ex, ey, ez))
+
+# target moment tensor
+with open("data/target_centroid.dat", "w") as f:
+    f.write("centroid coordinate\n")
+    f.write(str(target_xyz[0] - xmin) + "\n")
+    f.write(str(target_xyz[1] - ymin) + "\n")
+    f.write(str(target_xyz[2] - zmin) + "\n")
+    f.write("moment tensor\n")
+    for i in range(6):
+        f.write(str(target_mvec[i]) + "\n")
