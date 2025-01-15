@@ -1,6 +1,6 @@
 
-!#define CRS_NC 200
-#define CRS_NC 50
+#define CRS_NC 200
+!#define CRS_NC 50
 
 c_______________________________________________________________________
       subroutine CRS_nodes4_lib(n,ne,fid)
