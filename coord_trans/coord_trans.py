@@ -67,7 +67,7 @@ max_lat = 43.7
 # max_lat = 44.0
 
 # grid size
-ds = 5000.
+ds = 1250.
 
 # target moment tensor (iburi earthquake)
 target_lat = 42.65
@@ -393,9 +393,33 @@ for i in range(nlayer):
     layers_new[i][:, 1] -= ymin
     layers_new[i][:, 2] -= zmin
 
-# deletion layer 13
+# deletion thin layers
 for i in range(layers_new[14].shape[0]):
-    layers_new[13][i, 2] = layers_new[12][i, 2]
+    layers_new[1][i, 2] = layers_new[0][i, 2]
+    layers_new[2][i, 2] = layers_new[0][i, 2]
+    layers_new[3][i, 2] = layers_new[0][i, 2]
+    layers_new[4][i, 2] = layers_new[0][i, 2]
+    layers_new[5][i, 2] = layers_new[0][i, 2]
+    layers_new[6][i, 2] = layers_new[0][i, 2]
+    layers_new[8][i, 2] = layers_new[7][i, 2]
+    layers_new[9][i, 2] = layers_new[7][i, 2]
+    layers_new[10][i, 2] = layers_new[7][i, 2]
+    layers_new[11][i, 2] = layers_new[7][i, 2]
+    layers_new[12][i, 2] = layers_new[7][i, 2]
+    layers_new[13][i, 2] = layers_new[7][i, 2]
+for i in range(layers[14].shape[0]):
+    layers[1][i, :] = layers[0][i, :]
+    layers[2][i, :] = layers[0][i, :]
+    layers[3][i, :] = layers[0][i, :]
+    layers[4][i, :] = layers[0][i, :]
+    layers[5][i, :] = layers[0][i, :]
+    layers[6][i, :] = layers[0][i, :]
+    layers[8][i, :] = layers[7][i, :]
+    layers[9][i, :] = layers[7][i, :]
+    layers[10][i, :] = layers[7][i, :]
+    layers[11][i, :] = layers[7][i, :]
+    layers[12][i, :] = layers[7][i, :]
+    layers[13][i, :] = layers[7][i, :]
 
 # output
 for i in range(nlayer):
