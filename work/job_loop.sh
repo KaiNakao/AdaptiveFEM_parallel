@@ -31,12 +31,12 @@ mv ../work/${WORKDIR}/* ./
 
 # coordinate transformation of DEM data
 echo "coordinate transformation"
-python3 ../coord_trans/coord_trans.py > coord_trans.log
+time python3 ../coord_trans/coord_trans.py > coord_trans.log
 
 # generate mesh
 echo "generate mesh"
 cd ../dem_to_hdf5
-./compile_modeling_x86-64_ibis.sh
+time ./compile_modeling_x86-64_ibis.sh
 cd ../${WORKDIR}_tmp
 export OMP_NUM_THREADS=80
 ../dem_to_hdf5/modeling_hybrid_hdf.exe > dem_to_hdf5.log
@@ -46,9 +46,9 @@ echo "generate observation points"
 cd ../obs_displacement
 icpx -O3 gen_obs_points.cpp -o gen_obs_points
 cd ../${WORKDIR}_tmp
-../obs_displacement/gen_obs_points > gen_obs_points.log
+time ../obs_displacement/gen_obs_points > gen_obs_points.log
 
-for iter in {1..15}
+for iter in {1..10}
 do
     echo "iteration: ${iter}"
     # check surface
@@ -56,7 +56,7 @@ do
     cd ../hdf5_to_surf
     ./compile.sh
     cd ../${WORKDIR}_tmp
-    ../hdf5_to_surf/hdf5_to_surf.exe -s > hdf5_to_surf.log
+    time ../hdf5_to_surf/hdf5_to_surf.exe -s > hdf5_to_surf.log
     # check that only data/tri_surf.001.vtk was generated. Otherwise, mesh generation failed.
 
     # partition mesh
@@ -66,21 +66,21 @@ do
     ./compile_partition_2part_x86-64.sh 
     cd ../${WORKDIR}_tmp
     export OMP_NUM_THREADS=1
-    ../hdf5_to_hdata/partition_hybrid_model_2part.exe > hdf5_to_hdata.log
+    time ../hdf5_to_hdata/partition_hybrid_model_2part.exe > hdf5_to_hdata.log
 
     # generate second order mesh
     echo "generate second order mesh"
     cd ../hdata_to_cdatamdata
     ./compile_modeling_x86-64.sh 
     cd ../${WORKDIR}_tmp
-    mpiexec -n ${NPART} ../hdata_to_cdatamdata/mpi_prepare_hybrid_model_refine.exe > hdata_to_cdatamdata.log
+    time mpiexec -n ${NPART} ../hdata_to_cdatamdata/mpi_prepare_hybrid_model_refine.exe > hdata_to_cdatamdata.log
 
     # generate surface mesh
     echo "generate surface mesh"
     cd ../gen_surf_mesh
     ./compile_ibis.sh
     cd ../${WORKDIR}_tmp
-    mpiexec -n ${NPART} ../gen_surf_mesh/main > gen_surf_mesh.log
+    time mpiexec -n ${NPART} ../gen_surf_mesh/main > gen_surf_mesh.log
 
     # finite element solver
     export OMP_NUM_THREADS=4
@@ -88,48 +88,48 @@ do
     cd ../src_analysis_pointload
     make
     cd ../${WORKDIR}_tmp
-    mpiexec -n ${NPART} ../src_analysis_pointload/analysis.exe.npc1 > analysis.log
+    time mpiexec -n ${NPART} ../src_analysis_pointload/analysis.exe.npc1 > analysis.log
 
     # error analysis
     echo "error analysis"
     cd ../error_estimator
     ./compile_ibis.sh
     cd ../${WORKDIR}_tmp
-    mpiexec -n ${NPART} ../error_estimator/main > error_estimator.log
+    time mpiexec -n ${NPART} ../error_estimator/main > error_estimator.log
 
     # displacement at observation points
     echo "displacement at observation points"
     cd ../obs_displacement
     ./compile_ibis.sh
     cd ../${WORKDIR}_tmp
-    mpiexec -n ${NPART} ../obs_displacement/obs_displacement > obs_displacement.log
+    time mpiexec -n ${NPART} ../obs_displacement/obs_displacement > obs_displacement.log
 
     # ground surface response by centroid
     echo "ground surface response by centroid"
     cd ../calc_greens_function
     ifx -O3 main.F90 -o calc_greens_function
     cd ../${WORKDIR}_tmp
-    ../calc_greens_function/calc_greens_function > calc_greens_function.log
+    time ../calc_greens_function/calc_greens_function > calc_greens_function.log
 
     # merge local results
     echo "merge local results"
-    julia ../merge_local_result/to_AFEM.jl > merge_local_result.log
+    time julia ../merge_local_result/to_AFEM.jl > merge_local_result.log
 
     # mesh refinement
     echo "mesh refinement"
     cd ../refiner
     make
     cd ../${WORKDIR}_tmp
-    ../refiner/main > refiner.log
+    time ../refiner/main > refiner.log
 
     mkdir -p result/vtu
     mkdir -p result/fig
     # cd ../refiner
-    julia ../refiner/write_mesh.jl
-    julia ../refiner/fig_out.jl
+    time julia ../refiner/write_mesh.jl
+    time julia ../refiner/fig_out.jl
 
     echo "write hdf5 file for new mesh"
-    julia ../refiner/write_hdf5.jl > write_hdf5.log
+    time julia ../refiner/write_hdf5.jl > write_hdf5.log
 
     # set new workdir
     export WORKDIR_ORG=${WORKDIR}
