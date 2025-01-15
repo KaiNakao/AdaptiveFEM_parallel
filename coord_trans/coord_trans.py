@@ -56,30 +56,31 @@ def enu_to_xyz(lat, lon, de, dn, du, lat_c, lon_c):
                     [np.cos(lat_rad) * np.cos(lon_rad), np.cos(lat_rad) * np.sin(lon_rad), np.sin(lat_rad)]])
     return np.dot(np.linalg.inv(mat_c).T, np.dot(np.linalg.inv(mat), np.array([de, dn, du])))
 
+# target moment tensor (miyagi)
+target_lat = 38.4
+target_lon = 141.2
+target_depth = 25000.0
+target_mxx = 0.0
+target_myy = 0.0
+target_mzz = 0.0
+target_mxy = 0.0
+target_myz = 0.0
+target_mzx = 1e19
+target_mvec = np.array([target_mxx, target_myy, target_mzz, target_mxy, target_myz, target_mzx])
+
 # target area
-min_lon = 140.5
-max_lon = 143.5
-min_lat = 41.7
-max_lat = 43.7
-# min_lon = 140.0
-# max_lon = 144.0
-# min_lat = 40.0
-# max_lat = 44.0
+# min_lon = 140.5
+# max_lon = 143.5
+min_lon = target_lon - 1.5
+max_lon = target_lon + 1.5
+# min_lat = 41.7
+# max_lat = 43.7
+min_lat = target_lat - 1.0
+max_lat = target_lat + 1.0
 
 # grid size
-ds = 1250.
+ds = 2500.
 
-# target moment tensor (iburi earthquake)
-target_lat = 42.65
-target_lon = 142.0
-target_depth = 25000.0
-target_mxx = -4.015133102514872E+018 
-target_myy = -2.333685398756124E+017 
-target_mzz = 4.248501642390483E+018
-target_mxy = -3.411506076846931E+018 
-target_myz = -7.001746816076248E+017 
-target_mzx = 6.827618819906044E+018
-target_mvec = np.array([target_mxx, target_myy, target_mzz, target_mxy, target_myz, target_mzx])
 
 # number of layers for JIVSM
 nlayer = 23
@@ -116,7 +117,8 @@ jivsm_region["geoid"] = geoid
 for i in range(nlayer):
     hlabel = "h" + str(i+1).zfill(2)
     elvlabel = "elv" + str(i+1).zfill(2)
-    jivsm_region[hlabel] = jivsm_region[elvlabel] + geoid
+    # jivsm_region[hlabel] = jivsm_region[elvlabel] + geoid
+    jivsm_region[hlabel] = jivsm_region[elvlabel]
 
 # define origin of cartesian coordinates
 max_h = max(jivsm_region["h01"])
@@ -134,96 +136,12 @@ for i in range(nlayer):
         lon = jivsm_region.loc[j, "lon"]
         geoid = jivsm_region.loc[j, "geoid"]
         elv = jivsm_region.loc[j, "elv"+str(i+1).zfill(2)]
-        h = elv + geoid
+        # h = elv + geoid
+        h = elv
         layer[j] = lonlat_to_local(lat, lon, h, lat_c, lon_c, h_c)
     layers.append(layer)
 
 # coordinate transformation of the observation data
-# SAR
-column_names = ["lon", "lat", "elv", "dlos", "eE", "eN", "eU", "path"]
-df_sar = pd.read_csv("../coord_trans/original/SAR_org.dat", delim_whitespace=True, skiprows=1, names=column_names)
-type_ls = []
-for i in df_sar.index:
-    path = str(df_sar.loc[i, "path"])
-    type_ls.append("SAR_" + path)
-df_sar["type"] = type_ls
-
-# calculate geoid
-lat = df_sar["lat"]
-lon = df_sar["lon"]
-with open("../gsigeo2011_ver2_1_asc/program/input.dat", "w") as f:
-    for i in range(len(lat)):
-        j = (i + 1) % 10000
-        num = f'{j:4}'
-        name = f'{j:18}'
-        lat_str = f'{to_dms(lat[i]):15.04f}'
-        lon_str = f'{to_dms(lon[i]):15.04f}'
-        f.write(num + name + lat_str + lon_str + "\n")
-subprocess.run(["./gsigeome_asc", "input.dat", "output.dat", "gsigeo2011_ver2_1.asc"],
-                cwd="../gsigeo2011_ver2_1_asc/program")
-geoid = np.loadtxt(
-    "../gsigeo2011_ver2_1_asc/program/output.dat")[:, 4]
-df_sar["geoid"] = geoid
-df_sar["h"] = df_sar["elv"] + df_sar["geoid"]
-
-df_sar_out = pd.DataFrame()
-
-# coordinate transformation for location
-xvec = []
-yvec = []
-for i in df_sar.index:
-    lat = df_sar.loc[i, "lat"]
-    lon = df_sar.loc[i, "lon"]
-    h = df_sar.loc[i, "elv"] + df_sar.loc[i, "geoid"]
-    xyz = lonlat_to_local(lat, lon, h, lat_c, lon_c, h_c)
-    xvec.append(xyz[0])
-    yvec.append(xyz[1])
-
-df_sar_out["x"] = np.array(xvec)
-df_sar_out["y"] = np.array(yvec)
-
-# observation direction
-exvec = []
-eyvec = []
-ezvec = []
-for i in df_sar.index:
-    lat = df_sar.loc[i, "lat"]
-    lon = df_sar.loc[i, "lon"]
-    ee = df_sar.loc[i, "eE"]
-    en = df_sar.loc[i, "eN"]
-    eu = df_sar.loc[i, "eU"]
-    evec = enu_to_xyz(lat, lon, ee, en, eu, lat_c, lon_c)
-    evec /= np.linalg.norm(evec)
-    exvec.append(evec[0])
-    eyvec.append(evec[1])
-    ezvec.append(evec[2])
-
-df_sar_out["ex"] = exvec
-df_sar_out["ey"] = eyvec
-df_sar_out["ez"] = ezvec
-
-# line of sight displacement
-dlosvec = []
-for i in df_sar.index:
-    dlosvec.append(df_sar.loc[i, "dlos"])
-df_sar_out["dlos"] = dlosvec
-
-# observation error
-sigma_dict = {18: 2.1, 116: 1.1, 122: 0.9}
-sigmavec = []
-for i in df_sar.index:
-    path = df_sar.loc[i, "path"]
-    sigma = sigma_dict[path]
-    sigmavec.append(sigma)
-df_sar_out["sigma"] = sigmavec
-
-# type
-df_sar_out["type"] = df_sar["type"]
-
-df_sar_out.set_axis(["x", "y", "ex", "ey", "ez", "dlos", "sigma", "type"],
-            axis='columns')
-df_sar_out.to_csv("data/observation_sar.dat", index=False, sep=" ")
-
 # GNSS
 column_names = ["lon", "lat", "elv", "dE", "dN", "dU", "id"]
 df_gnss = pd.read_csv("../coord_trans/original/GNSS_org.dat", delim_whitespace=True, skiprows=1, names=column_names)
@@ -353,9 +271,11 @@ target_xyz = lonlat_to_local(target_lat, target_lon, target_h, lat_c, lon_c, h_c
 
 # find max/min of x and y
 xmin = int(min(min(layer[:,0]) for layer in layers))
-xmax = int(max(max(layer[:,0]) for layer in layers))
+# xmax = int(max(max(layer[:,0]) for layer in layers))
+xmax = xmin + 5e3 * 48
 ymin = int(min(min(layer[:,1]) for layer in layers))
-ymax = int(max(max(layer[:,1]) for layer in layers))
+# ymax = int(max(max(layer[:,1]) for layer in layers))
+ymax = ymin + 5e3 * 40
 
 # number of intervals for new grid in cartesian coordinates
 nx = int((xmax - xmin) / ds)
@@ -454,7 +374,7 @@ with open("data/material.dat", "w") as f:
         f.write(str(material[i, 2] * 1000) + "\n")
         for _ in range(4):
             f.write(str(0.) + "\n")
-        f.write(str(1.) + "\n")
+        f.write(str(1000) + "\n")
         for _ in range(2):
             f.write(str(0.) + "\n")
     

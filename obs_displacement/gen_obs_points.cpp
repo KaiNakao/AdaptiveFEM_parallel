@@ -57,7 +57,7 @@ int main() {
                                  13e4, 14e4, 15e4, 16e4, 17e4, 18e4};
     std::vector<double> y_obs = {5e4,  6e4,  7e4,  8e4,  9e4,  10e4,
                                  11e4, 12e4, 13e4, 14e4, 15e4, 16e4};
-    std::vector<double> z_obs = {20e4, 21e4, 22e4, 23e4, 24e4, 25e4, 26e4};
+    std::vector<double> z_obs = {12e4, 13e4, 14e4, 15e4, 16e4, 17e4};
 
     if (x_obs[0] < xmin || x_obs.back() > xmax) {
         std::cerr << "Error: x_obs is out of model domain." << std::endl;

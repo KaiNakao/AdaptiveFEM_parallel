@@ -5,7 +5,7 @@
 #PBS -l select=4:ncpus=80:mpiprocs=20
 
 #########################################################
-export WORKDIR=work_5000_1
+export WORKDIR=work_2500_1
 echo "WORKDIR: ${WORKDIR}"
 
 # number of partitions
@@ -48,7 +48,7 @@ icpx -O3 gen_obs_points.cpp -o gen_obs_points
 cd ../${WORKDIR}_tmp
 time ../obs_displacement/gen_obs_points > gen_obs_points.log
 
-for iter in {1..10}
+for iter in {1..15}
 do
     echo "iteration: ${iter}"
     # check surface
