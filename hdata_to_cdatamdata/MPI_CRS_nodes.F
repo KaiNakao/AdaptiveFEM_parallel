@@ -43,7 +43,7 @@
 !~c_______________________________________________________________________
  !     subroutine main(n,ne,kd,im)
 !#define NC_CRSNODESLIB 200
-#define NC_CRSNODESLIB 400
+#define NC_CRSNODESLIB 800
 !      parameter(nc=200)
       subroutine CRS_nodes_lib(n,ne,fid)
       implicit none
