@@ -237,4 +237,5 @@ int main(int argc, char *argv[]) {
             write_displacement_obs(result, iload);
         }
     }
+    MPI_Finalize();
 }
