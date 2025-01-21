@@ -79,7 +79,7 @@ min_lat = target_lat - 1.0
 max_lat = target_lat + 1.0
 
 # grid size
-ds = 2500.
+ds = 625.
 
 
 # number of layers for JIVSM
