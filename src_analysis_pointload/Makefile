@@ -69,7 +69,7 @@ LINKMETIS = -L${METISPATH}/lib/ -lmetis
 OPTIONS = \
 	-DREAL_4=real*4 -DREAL_4_SIZE=4 -DMPI_REAL_4=MPI_REAL4 \
 	-DUSEIEPENTA -DNOOMPSAME -DTET4GRID -DMAXCOLOR=20 \
-	-Dnpc=${NPC} -Dnkl=${NKL} -Dnsta=${NSTA} -DDIV_N=32 -DNOUSE_PA -DNONOUTPUTBLOCK=100 -DGFLIB
+	-Dnpc=${NPC} -Dnkl=${NKL} -Dnsta=${NSTA} -DDIV_N=32 -DNOUSE_PA -DNONOUTPUTBLOCK=100 -DREAD_NODAL_FORCE \
 #	-DREAL_4=real*8 -DREAL_4_SIZE=8 -DMPI_REAL_4=MPI_REAL8 \
 
 .SUFFIXES: .o .F .F90 .cpp
@@ -105,7 +105,8 @@ SRC_SUB_F = \
 	output_obs.F \
 
 SRC_SUB_F90 = \
-	pointload.F90
+	pointload.F90 \
+	read_nodal_force.F90
 
 
 SRC_C = hdf_lib.c scale_value.c

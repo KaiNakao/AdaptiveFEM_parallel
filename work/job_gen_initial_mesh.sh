@@ -2,15 +2,15 @@
 #PBS -j oe
 #PBS -q calc
 ##PBS -N hpl
-#PBS -l select=4:ncpus=80:mpiprocs=80
+#PBS -l select=1:ncpus=80:mpiprocs=1
 
 #########################################################
 # check DNSQUASH in compile_modeling_x86-64_ibis.sh #
-export WORKDIR=work1
+export WORKDIR=work_625_uniform
 echo "WORKDIR: ${WORKDIR}"
 
 # number of partitions
-export NPART=64
+export NPART=800
 echo "NPART: ${NPART}"
 cd ${PBS_O_WORKDIR}
 

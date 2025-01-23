@@ -5,6 +5,10 @@
 #include "reader.hpp"
 #include "writer.hpp"
 
+#ifdef SURF
+#include "surf.hpp"
+#endif
+
 int main(int argc, char *argv[]) {
     int myid, numprocs;
     MPI_Init(&argc, &argv);
@@ -35,7 +39,12 @@ int main(int argc, char *argv[]) {
     }
 
     std::vector<std::vector<double>> obs_point;
+#ifdef SURF
+    calc_projection(myid, coor, obs_point);
+    nload = 1;
+#else
     read_obs_point(myid, obs_point);
+#endif
 
     std::vector<int> found_arr(obs_point.size(), 0);
     std::vector<int> iobs_arr;
@@ -132,6 +141,8 @@ int main(int argc, char *argv[]) {
             iobs_arr.push_back(iobs);
             ielem_arr.push_back(ielem);
             r_arr.push_back({r1, r2, r3});
+            std::cout << "iobs: " << iobs << " r1: " << r1 << " r2: " << r2
+                      << " r3: " << r3 << std::endl;
             break;
         }
     }

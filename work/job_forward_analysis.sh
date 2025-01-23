@@ -2,14 +2,14 @@
 #PBS -j oe
 #PBS -q calc
 ##PBS -N hpl
-#PBS -l select=4:ncpus=80:mpiprocs=20
+#PBS -l select=10:ncpus=80:mpiprocs=80
 
 #########################################################
-export WORKDIR=work1
+export WORKDIR=work_625_uniform
 echo "WORKDIR: ${WORKDIR}"
 
 # number of partitions
-export NPART=64
+export NPART=800
 echo "NPART: ${NPART}"
 cd ${PBS_O_WORKDIR}
 
@@ -30,29 +30,36 @@ echo "generate second order mesh"
 cd ../hdata_to_cdatamdata
 ./compile_modeling_x86-64.sh 
 cd ../${WORKDIR}_tmp
-mpiexec -n ${NPART} ../hdata_to_cdatamdata/mpi_prepare_hybrid_model_refine.exe > hdata_to_cdatamdata.log
+time mpiexec -n ${NPART} ../hdata_to_cdatamdata/mpi_prepare_hybrid_model_refine.exe > hdata_to_cdatamdata.log
 
 # generate surface mesh
 echo "generate surface mesh"
 cd ../gen_surf_mesh
 ./compile_ibis.sh
 cd ../${WORKDIR}_tmp
-mpiexec -n ${NPART} ../gen_surf_mesh/main > gen_surf_mesh.log
+time mpiexec -n ${NPART} ../gen_surf_mesh/main > gen_surf_mesh.log
+
+# calculate nodal force
+echo "calculate nodal force"
+cd ../calc_nodal_force
+./compile_ibis.sh
+cd ../${WORKDIR}_tmp
+time mpiexec -n ${NPART} ../calc_nodal_force/main > calc_nodal_force.log
 
 # finite element solver
-export OMP_NUM_THREADS=4
+export OMP_NUM_THREADS=1
 echo "finite element solver"
 cd ../src_analysis_pointload
 make
 cd ../${WORKDIR}_tmp
-mpiexec -n ${NPART} ../src_analysis_pointload/analysis.exe.npc1 > analysis.log
+time mpiexec -n ${NPART} ../src_analysis_pointload/analysis.exe.npc1 > analysis.log
 
-# error analysis
-echo "error analysis"
-cd ../error_estimator
-./compile_ibis.sh
-cd ../${WORKDIR}_tmp
-mpiexec -n ${NPART} ../error_estimator/main > error_estimator.log
+# # error analysis
+# echo "error analysis"
+# cd ../error_estimator
+# ./compile_ibis.sh
+# cd ../${WORKDIR}_tmp
+# mpiexec -n ${NPART} ../error_estimator/main > error_estimator.log
 
 # displacement at observation points
 echo "displacement at observation points"
@@ -61,12 +68,12 @@ cd ../obs_displacement
 cd ../${WORKDIR}_tmp
 mpiexec -n ${NPART} ../obs_displacement/obs_displacement > obs_displacement.log
 
-# ground surface response by centroid
-echo "ground surface response by centroid"
-cd ../calc_greens_function
-ifx -O3 main.F90 -o calc_greens_function
-cd ../${WORKDIR}_tmp
-../calc_greens_function/calc_greens_function > calc_greens_function.log
+# # ground surface response by centroid
+# echo "ground surface response by centroid"
+# cd ../calc_greens_function
+# ifx -O3 main.F90 -o calc_greens_function
+# cd ../${WORKDIR}_tmp
+# ../calc_greens_function/calc_greens_function > calc_greens_function.log
 
 cd ../work
 cd ${WORKDIR}

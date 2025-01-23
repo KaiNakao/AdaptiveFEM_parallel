@@ -56,6 +56,9 @@ def enu_to_xyz(lat, lon, de, dn, du, lat_c, lon_c):
                     [np.cos(lat_rad) * np.cos(lon_rad), np.cos(lat_rad) * np.sin(lon_rad), np.sin(lat_rad)]])
     return np.dot(np.linalg.inv(mat_c).T, np.dot(np.linalg.inv(mat), np.array([de, dn, du])))
 
+# octree level
+nk = 1
+
 # target moment tensor (miyagi)
 target_lat = 38.4
 target_lon = 141.2
@@ -77,9 +80,10 @@ max_lon = target_lon + 1.5
 # max_lat = 43.7
 min_lat = target_lat - 1.0
 max_lat = target_lat + 1.0
+# max_lat = target_lat + 2.0
 
 # grid size
-ds = 625.
+ds = 625
 
 
 # number of layers for JIVSM
@@ -276,6 +280,7 @@ xmax = xmin + 5e3 * 48
 ymin = int(min(min(layer[:,1]) for layer in layers))
 # ymax = int(max(max(layer[:,1]) for layer in layers))
 ymax = ymin + 5e3 * 40
+# ymax = ymin + 5e3 * 48
 
 # number of intervals for new grid in cartesian coordinates
 nx = int((xmax - xmin) / ds)
@@ -359,7 +364,7 @@ with open("data/modeling_setting.dat", "w") as f:
     f.write("num of layer\n")
     f.write(str(nlayer) + "\n")
     f.write("nk 2**nk: nx and ny = 2**nk * alpha\n")
-    f.write(str(4) + "\n")
+    f.write(str(nk) + "\n")
     f.write("freq\n")
     f.write(str(0.25) + "\n")
     f.write("now\n")
@@ -411,9 +416,12 @@ with open("data/pointload.dat", "w") as f:
 # target moment tensor
 with open("data/target_centroid.dat", "w") as f:
     f.write("centroid coordinate\n")
-    f.write(str(target_xyz[0] - xmin) + "\n")
-    f.write(str(target_xyz[1] - ymin) + "\n")
-    f.write(str(target_xyz[2] - zmin) + "\n")
+    #f.write(str(target_xyz[0] - xmin) + "\n")
+    #f.write(str(target_xyz[1] - ymin) + "\n")
+    #f.write(str(target_xyz[2] - zmin) + "\n")
+    f.write(str(202000) + "\n")
+    f.write(str(42000) + "\n")
+    f.write(str(62000) + "\n")
     f.write("moment tensor\n")
     for i in range(6):
         f.write(str(target_mvec[i]) + "\n")

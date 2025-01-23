@@ -225,7 +225,7 @@
 
 ! #define CRSSIZE 200
 ! #define CRSSIZE 1000
-#define CRSSIZE 5000
+#define CRSSIZE 2000
 !#define nsta 5
 
       integer ne4_size,n4_size,ni4_size,nei4_size,n4,ne4,ni4,nei4
@@ -631,6 +631,9 @@
 #endif
             )
 
+#ifdef READ_NODAL_FORCE
+      call read_nodal_force(im, n, ne, ni, coor, cny, rv)
+#endif
      
       up=0.0
 
@@ -713,5 +716,8 @@
       call output_displacement(im, n, ni, up, iload)
       enddo
       call output_load_elem(im, ne, load_elem_arr)
+#endif
+#ifdef READ_NODAL_FORCE
+      call output_displacement(im, n, ni, up, 1)
 #endif
       end
