@@ -2,6 +2,7 @@
 !*/
 
 !calc_nodal_force/*.sh
+!calc_nodal_force/*.c
 !calc_nodal_force/*.cpp
 !calc_nodal_force/*.hpp
 !calc_nodal_force/*.F90
