@@ -13,5 +13,5 @@ OPTC=" "
 $CXX reader.cpp $INCLHDF $LINKHDF $OPTLEV $OPTCPP -c
 $CXX writer.cpp $INCLHDF $LINKHDF $OPTLEV $OPTCPP -c
 $CXX surf.cpp $INCLHDF $LINKHDF $OPTLEV $OPTCPP -c
-# $CXX obs_displacement.cpp reader.o writer.o surf.o $INCLHDF $LINKHDF $OPTLEV $OPTCPP -o obs_displacement
-$CXX obs_displacement.cpp reader.o writer.o surf.o $INCLHDF $LINKHDF $OPTLEV $OPTCPP -DSURF -o obs_displacement
+$CXX obs_displacement.cpp reader.o writer.o surf.o $INCLHDF $LINKHDF $OPTLEV $OPTCPP -o obs_displacement
+# $CXX obs_displacement.cpp reader.o writer.o surf.o $INCLHDF $LINKHDF $OPTLEV $OPTCPP -DSURF -o obs_displacement

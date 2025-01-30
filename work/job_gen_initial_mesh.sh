@@ -6,11 +6,11 @@
 
 #########################################################
 # check DNSQUASH in compile_modeling_x86-64_ibis.sh #
-export WORKDIR=work_625_uniform
+export WORKDIR=work_5600_crust_tmp
 echo "WORKDIR: ${WORKDIR}"
 
 # number of partitions
-export NPART=800
+export NPART=320
 echo "NPART: ${NPART}"
 cd ${PBS_O_WORKDIR}
 

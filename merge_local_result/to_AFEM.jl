@@ -2,7 +2,7 @@ using HDF5
 using LinearAlgebra
 
 work_dir = "./"
-nproc = 64
+nproc = parse(Int32, ARGS[1])
 
 neighbor_arr = []
 nnode_arr = []

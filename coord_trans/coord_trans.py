@@ -57,6 +57,7 @@ def enu_to_xyz(lat, lon, de, dn, du, lat_c, lon_c):
     return np.dot(np.linalg.inv(mat_c).T, np.dot(np.linalg.inv(mat), np.array([de, dn, du])))
 
 # octree level
+# nk = 7
 nk = 1
 
 # target moment tensor (miyagi)
@@ -76,14 +77,14 @@ target_mvec = np.array([target_mxx, target_myy, target_mzz, target_mxy, target_m
 # max_lon = 143.5
 min_lon = target_lon - 1.5
 max_lon = target_lon + 1.5
+
 # min_lat = 41.7
 # max_lat = 43.7
 min_lat = target_lat - 1.0
 max_lat = target_lat + 1.0
-# max_lat = target_lat + 2.0
 
 # grid size
-ds = 625
+ds = 1250.
 
 
 # number of layers for JIVSM
@@ -276,11 +277,10 @@ target_xyz = lonlat_to_local(target_lat, target_lon, target_h, lat_c, lon_c, h_c
 # find max/min of x and y
 xmin = int(min(min(layer[:,0]) for layer in layers))
 # xmax = int(max(max(layer[:,0]) for layer in layers))
-xmax = xmin + 5e3 * 48
+xmax = xmin + 240000
 ymin = int(min(min(layer[:,1]) for layer in layers))
 # ymax = int(max(max(layer[:,1]) for layer in layers))
-ymax = ymin + 5e3 * 40
-# ymax = ymin + 5e3 * 48
+ymax = ymin + 200000
 
 # number of intervals for new grid in cartesian coordinates
 nx = int((xmax - xmin) / ds)
@@ -419,9 +419,9 @@ with open("data/target_centroid.dat", "w") as f:
     #f.write(str(target_xyz[0] - xmin) + "\n")
     #f.write(str(target_xyz[1] - ymin) + "\n")
     #f.write(str(target_xyz[2] - zmin) + "\n")
-    f.write(str(202000) + "\n")
-    f.write(str(42000) + "\n")
     f.write(str(62000) + "\n")
+    f.write(str(102000) + "\n")
+    f.write(str(162000) + "\n")
     f.write("moment tensor\n")
     for i in range(6):
         f.write(str(target_mvec[i]) + "\n")
