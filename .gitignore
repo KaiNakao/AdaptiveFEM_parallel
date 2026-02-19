@@ -72,6 +72,14 @@ work/
 !metis-5.1.0_icc_32bit/include/*
 !metis-5.1.0_icc_32bit/lib/*
 
+!obs_displacement/*.sh
+!obs_displacement/*.c
+!obs_displacement/*.cpp
+!obs_displacement/*.hpp
+
+!parmetis_icc_32bit/include/*
+!parmetis_icc_32bit/lib/*
+
 !refiner/src/*.cpp
 !refiner/src/*.hpp
 !refiner/*.jl
@@ -99,11 +107,6 @@ work/
 !src_analysis_pointload_reduce/*.F90
 !src_analysis_pointload_reduce/*.c
 !src_analysis_pointload_reduce/Makefile
-
-!obs_displacement/*.sh
-!obs_displacement/*.c
-!obs_displacement/*.cpp
-!obs_displacement/*.hpp
 
 !calc_greens_function/main.F90
 
