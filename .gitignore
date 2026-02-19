@@ -1,5 +1,20 @@
 *
+work/
 !*/
+
+!analysis_integrated/src/analysis_pointload/*.F
+!analysis_integrated/src/analysis_pointload/*.F90
+!analysis_integrated/src/analysis_pointload/*.c
+!analysis_integrated/src/analysis_pointload/*.cpp
+!analysis_integrated/src/analysis_pointload/*.hpp
+!analysis_integrated/src/common/*.c
+!analysis_integrated/src/common/*.h
+!analysis_integrated/src/error_estimator/*.cpp
+!analysis_integrated/src/error_estimator/*.hpp
+!analysis_integrated/src/obs_displacement/*.cpp
+!analysis_integrated/src/obs_displacement/*.hpp
+!analysis_integrated/src/*.cpp
+!analysis_integrated/Makefile
 
 !calc_nodal_force/*.sh
 !calc_nodal_force/*.c
@@ -14,9 +29,17 @@
 !dem_to_hdf5/*.F
 !dem_to_hdf5/*.c
 
+!error_estimator/*.cpp
+!error_estimator/*.hpp
+!error_estimator/*.c
+!error_estimator/*.sh
+
 !gen_surf_mesh/*.sh
 !gen_surf_mesh/*.c
 !gen_surf_mesh/*.cpp
+
+!gflib_icc/include/*
+!gflib_icc/lib/*
 
 !gsigeo2011_ver2_1_asc/program/gsigeome_asc
 !gsigeo2011_ver2_1_asc/program/gsigeo2011_ver2_1.asc
@@ -54,15 +77,28 @@
 !refiner/*.jl
 !refiner/Makefile
 
+!refiner_mpi/src/*.cpp
+!refiner_mpi/src/*.hpp
+!refiner_mpi/*.c
+!refiner_mpi/*.h
+!refiner_mpi/Makefile
+!refiner_mpi/*.jl
+
+!repartition/src/*.cpp
+!repartition/src/*.hpp
+!repartition/src/*.c
+!repartition/src/*.h
+!repartition/Makefile
+
 !src_analysis_pointload/*.F
 !src_analysis_pointload/*.F90
 !src_analysis_pointload/*.c
 !src_analysis_pointload/Makefile
 
-!error_estimator/*.cpp
-!error_estimator/*.hpp
-!error_estimator/*.c
-!error_estimator/*.sh
+!src_analysis_pointload_reduce/*.F
+!src_analysis_pointload_reduce/*.F90
+!src_analysis_pointload_reduce/*.c
+!src_analysis_pointload_reduce/Makefile
 
 !obs_displacement/*.sh
 !obs_displacement/*.c
