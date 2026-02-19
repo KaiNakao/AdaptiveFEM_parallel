@@ -5,7 +5,10 @@ void mark_elem_to_refine(const std::vector<double> &eta_arr,
                          const double &threshold) {
     double eta_max = 0.0, eta_max_local = 0.0;
     for (int ielem = 0; ielem < eta_arr.size(); ielem++) {
-        if (load_elem[ielem]) continue;
+        if (load_elem[ielem])  {
+            std::cout << "load elem: " << ielem << std::endl;
+            continue;
+        }
         eta_max = std::max(eta_max, eta_arr[ielem]);
     }
     eta_max_local = eta_max;

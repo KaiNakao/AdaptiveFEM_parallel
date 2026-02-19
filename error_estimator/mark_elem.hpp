@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <iostream>
 
 #include "mpi.h"
 void mark_elem_to_refine(const std::vector<double> &eta_arr,

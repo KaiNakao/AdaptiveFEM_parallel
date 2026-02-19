@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <set>
 
 void read_shape(const std::string &data_dir, int &nelem, int &nnode_linear,
                 int &nnode_quad, int &nmaterial, int &nelem_marked);
@@ -22,7 +23,7 @@ void read_load_elem(const std::string &data_dir, const int &nelem,
 
 void read_marked_elem(const std::string &data_dir,
                       const int &nelem_marked,
-                      std::vector<int> &marked_elem);
+                      std::set<int> &marked_elem);
 
 void read_refinement_edge(const std::string &data_dir,
                           const int &nelem,

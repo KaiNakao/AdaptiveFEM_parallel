@@ -77,6 +77,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <map>
+#include <climits>
 
 #ifndef DEBUG_NO_MPI
 #include "mpi.h"
@@ -271,7 +272,8 @@ void read_global_settings(const int myrank, double &ds, double &gminx, double &g
 void read_local_data(std::string name, int &n, int &ne_tet4, int &ne_vox8, int &neighbors,
                      std::vector<double> &coor, std::vector<int> &conn_tet4, std::vector<int> &conn_vox8,
                      std::vector<int> &neighborrankid, std::vector<int> &mpinode_pointer,
-                     std::vector<int> &mpinode_index, std::vector<int> &surfnodes)
+                     std::vector<int> &mpinode_index, std::vector<int> &surfnodes,
+                     std::vector<int> &global_node_id, std::vector<long> &global_node_id64)
 {
 #ifndef DEBUG_NO_HDF5
   long fid(0), count, size;
@@ -319,6 +321,28 @@ void read_local_data(std::string name, int &n, int &ne_tet4, int &ne_vox8, int &
   size = mpinode_index.size();
   if (size != 0)
     hdf_read_int_array_(&fid, "/mpinode_index", &(mpinode_index[0]), &size, &count);
+
+  // optional global node id (1-based)
+  global_node_id.clear();
+  global_node_id64.clear();
+  if (hdf_has_dataset_(&fid, (char *)"/global_node_id")) {
+    size = 0;
+    hdf_get_array_size_(&fid, (char *)"/global_node_id", &size);
+    if (size > 0) {
+      global_node_id.resize(size);
+      hdf_read_int_array_(&fid, (char *)"/global_node_id",
+                          &(global_node_id[0]), &size, &count);
+    }
+  }
+  if (hdf_has_dataset_(&fid, (char *)"/global_node_id64")) {
+    size = 0;
+    hdf_get_array_size_(&fid, (char *)"/global_node_id64", &size);
+    if (size > 0) {
+      global_node_id64.resize(size);
+      hdf_read_long_array_(&fid, (char *)"/global_node_id64",
+                           &(global_node_id64[0]), &size, &count);
+    }
+  }
 
   hdf_close_file_(&fid);
 
@@ -1616,10 +1640,28 @@ void write_hdf_duplicate(long fid, int n, const std::vector<int> &mpinode_index)
   hdf_write_int_array_(&fid, "/duplicate", (int *)&(duplicate[0]), &size);
 }
 
+void write_hdf_global_node_id(long fid, const std::vector<int> &global_node_id)
+{
+  if (global_node_id.empty())
+    return;
+  long size(global_node_id.size());
+  hdf_write_int_array_(&fid, "/global_node_id", (int *)&(global_node_id[0]), &size);
+}
+
+void write_hdf_global_node_id64(long fid, const std::vector<long> &global_node_id64)
+{
+  if (global_node_id64.empty())
+    return;
+  long size(global_node_id64.size());
+  hdf_write_long_array_(&fid, "/global_node_id64", (long *)&(global_node_id64[0]), &size);
+}
+
 void write_hdf_mdata(const std::vector<double> &coor, const std::vector<int> &conn_alltet10,
                      const std::vector<int> &neighborrankid,
                      const std::vector<int> &mpinode_pointer, const std::vector<int> &mpinode_index,
-                     const std::vector<int> &BC, int nmat, long fid)
+                     const std::vector<int> &BC, int nmat, long fid,
+                     const std::vector<int> &global_node_id,
+                     const std::vector<long> &global_node_id64)
 {
   int setting[3];
   setting[0] = coor.size() / 3;           // number of nodes
@@ -1633,12 +1675,16 @@ void write_hdf_mdata(const std::vector<double> &coor, const std::vector<int> &co
   write_hdf_MPInode(fid, neighborrankid, mpinode_pointer, mpinode_index);
   write_hdf_BC(fid, BC);
   write_hdf_duplicate(fid, setting[0], mpinode_index);
+  write_hdf_global_node_id(fid, global_node_id);
+  write_hdf_global_node_id64(fid, global_node_id64);
 }
 
 void write_hdf_cdata(const std::vector<double> &coor, const std::vector<int> &conn_vox8,
                      const std::vector<int> &conn_tet4, const std::vector<int> &neighborrankid,
                      const std::vector<int> &mpinode_pointer, const std::vector<int> &mpinode_index,
-                     const std::vector<int> &BC, int nmat, long fid)
+                     const std::vector<int> &BC, int nmat, long fid,
+                     const std::vector<int> &global_node_id,
+                     const std::vector<long> &global_node_id64)
 {
   std::vector<int> conn_alltet4;
   convert_vox8tet4_to_tet4(conn_vox8, conn_tet4, conn_alltet4);
@@ -1656,6 +1702,8 @@ void write_hdf_cdata(const std::vector<double> &coor, const std::vector<int> &co
   write_hdf_MPInode(fid, neighborrankid, mpinode_pointer, mpinode_index);
   write_hdf_BC(fid, BC);
   write_hdf_duplicate(fid, setting[0], mpinode_index);
+  write_hdf_global_node_id(fid, global_node_id);
+  write_hdf_global_node_id64(fid, global_node_id64);
 }
 #endif
 
@@ -2132,11 +2180,14 @@ int main(int argc, char **argv)
   std::vector<int> mpinode_linear_index;   // list of local nodes to be communicated
   //  mpinode_index[mpinode_linear_pointer[i]]->start of nodes to be communicated in mpinode_index for neighborrank i
   std::vector<int> surfnodes; // list of local nodes on surface
+  std::vector<int> global_node_id; // optional global node id (1-based)
+  std::vector<long> global_node_id64; // optional global node id (64-bit)
 
   read_local_data("./hdata/" + ToString(myrank, 6, '0') + ".data.h5",
                   n, ne_tet4, ne_vox8, neighbors,
                   coor, conn_tet4, conn_vox8,
-                  neighborrankid, mpinode_linear_pointer, mpinode_linear_index, surfnodes);
+                  neighborrankid, mpinode_linear_pointer, mpinode_linear_index, surfnodes,
+                  global_node_id, global_node_id64);
 
   double dsorg(ds);
 #ifdef MAKE_INFINITE_BOUNDARY
@@ -2305,12 +2356,83 @@ int main(int argc, char **argv)
   MPI_extract_3D_nodes_quad(coor_quad, conn_alltet10, surfnodes_quad, myrank, minelev);
 #endif
 
+  std::vector<int> global_node_id_quad;
+  std::vector<long> global_node_id64_quad;
+  if (!global_node_id64.empty() || !global_node_id.empty()) {
+    if (global_node_id64.empty() && !global_node_id.empty()) {
+      global_node_id64.assign(global_node_id.begin(), global_node_id.end());
+    }
+    if (global_node_id.empty() && !global_node_id64.empty()) {
+      global_node_id.resize(global_node_id64.size(), 0);
+      for (int i = 0; i < static_cast<int>(global_node_id64.size()); ++i) {
+        if (global_node_id64[i] > 0 && global_node_id64[i] <= INT_MAX)
+          global_node_id[i] = static_cast<int>(global_node_id64[i]);
+      }
+    }
+
+    global_node_id_quad.assign(coor_quad.size() / 3, 0);
+    global_node_id64_quad.assign(coor_quad.size() / 3, 0);
+    for (int inode = 0; inode < static_cast<int>(global_node_id64.size()); ++inode) {
+      int qnode = nodemap_linear2quad[inode];
+      if (qnode >= 0 && qnode < static_cast<int>(global_node_id_quad.size()))
+        global_node_id_quad[qnode] = (inode < static_cast<int>(global_node_id.size())) ? global_node_id[inode] : 0;
+      if (qnode >= 0 && qnode < static_cast<int>(global_node_id64_quad.size()))
+        global_node_id64_quad[qnode] = global_node_id64[inode];
+    }
+
+    auto edge_gid64 = [](long a, long b) -> long {
+      if (a > b) {
+        long t = a;
+        a = b;
+        b = t;
+      }
+      unsigned long long ua = static_cast<unsigned long long>(a);
+      unsigned long long ub = static_cast<unsigned long long>(b);
+      unsigned long long key = (ua << 32) | ub;
+      return static_cast<long>(key);
+    };
+
+    int ne = conn_alltet10.size() / 11;
+    for (int ie = 0; ie < ne; ++ie) {
+      int n0 = conn_alltet10[11 * ie + 0];
+      int n1 = conn_alltet10[11 * ie + 1];
+      int n2 = conn_alltet10[11 * ie + 2];
+      int n3 = conn_alltet10[11 * ie + 3];
+      int e01 = conn_alltet10[11 * ie + 4];
+      int e12 = conn_alltet10[11 * ie + 5];
+      int e02 = conn_alltet10[11 * ie + 6];
+      int e03 = conn_alltet10[11 * ie + 7];
+      int e13 = conn_alltet10[11 * ie + 8];
+      int e23 = conn_alltet10[11 * ie + 9];
+
+      long g0 = global_node_id64_quad[n0];
+      long g1 = global_node_id64_quad[n1];
+      long g2 = global_node_id64_quad[n2];
+      long g3 = global_node_id64_quad[n3];
+
+      if (e01 >= 0 && e01 < static_cast<int>(global_node_id64_quad.size()) && global_node_id64_quad[e01] == 0)
+        global_node_id64_quad[e01] = edge_gid64(g0, g1);
+      if (e12 >= 0 && e12 < static_cast<int>(global_node_id64_quad.size()) && global_node_id64_quad[e12] == 0)
+        global_node_id64_quad[e12] = edge_gid64(g1, g2);
+      if (e02 >= 0 && e02 < static_cast<int>(global_node_id64_quad.size()) && global_node_id64_quad[e02] == 0)
+        global_node_id64_quad[e02] = edge_gid64(g0, g2);
+      if (e03 >= 0 && e03 < static_cast<int>(global_node_id64_quad.size()) && global_node_id64_quad[e03] == 0)
+        global_node_id64_quad[e03] = edge_gid64(g0, g3);
+      if (e13 >= 0 && e13 < static_cast<int>(global_node_id64_quad.size()) && global_node_id64_quad[e13] == 0)
+        global_node_id64_quad[e13] = edge_gid64(g1, g3);
+      if (e23 >= 0 && e23 < static_cast<int>(global_node_id64_quad.size()) && global_node_id64_quad[e23] == 0)
+        global_node_id64_quad[e23] = edge_gid64(g2, g3);
+    }
+  }
+
   write_hdf_mdata(coor_quad, conn_alltet10, neighborrankid,
-                  mpinode_quad_pointer, mpinode_quad_index, boundarynode_quad, nmat, fidm);
+                  mpinode_quad_pointer, mpinode_quad_index, boundarynode_quad, nmat, fidm,
+                  global_node_id_quad, global_node_id64_quad);
   write_hdf_numofelements(fidm, conn_alltet10.size() / 11, nthread);
 
   write_hdf_cdata(coor, conn_vox8, conn_tet4, neighborrankid,
-                  mpinode_linear_pointer, mpinode_linear_index, boundarynode_linear, nmat, fidc);
+                  mpinode_linear_pointer, mpinode_linear_index, boundarynode_linear, nmat, fidc,
+                  global_node_id, global_node_id64);
 
   write_settings(coor_quad, conn_alltet10, neighborrankid, mpinode_quad_pointer, mpinode_quad_index, nmat, myrank);
 

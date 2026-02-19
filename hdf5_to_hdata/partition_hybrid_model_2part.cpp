@@ -1218,7 +1218,9 @@ void write_data_hdf(const std::vector<double>& coor_part,
                     const std::vector<int>& neighborrankid,
                     const std::vector<int>& mpinode_pointer,
                     const std::vector<int>& mpinode_index,
-                    const std::vector<int>& surfnodes, std::string name) {
+                    const std::vector<int>& surfnodes,
+                    const std::vector<int>& global_node_id,
+                    std::string name) {
 #ifndef DEBUG_NO_HDF5
     long fid(0), size;
     hdf_create_file_(name.c_str(), &fid);
@@ -1257,6 +1259,16 @@ void write_data_hdf(const std::vector<double>& coor_part,
     size = mpinode_index.size();
     hdf_write_int_array_(&fid, "/mpinode_index", (int*)&(mpinode_index[0]),
                          &size);
+
+    if (!global_node_id.empty()) {
+        size = global_node_id.size();
+        hdf_write_int_array_(&fid, "/global_node_id",
+                             (int*)&(global_node_id[0]), &size);
+        std::vector<long> global_node_id64(global_node_id.begin(), global_node_id.end());
+        size = global_node_id64.size();
+        hdf_write_long_array_(&fid, "/global_node_id64",
+                              (long*)&(global_node_id64[0]), &size);
+    }
     hdf_close_file_(&fid);
 #endif
 }
@@ -1535,9 +1547,14 @@ int main() {
         t4 = omp_get_wtime();
 
         // write data
+        std::vector<int> global_node_id(n_part);
+        for (inode = 0; inode < n_part; ++inode) {
+            glbnodeid = nodemap_local2global[inode];
+            global_node_id[inode] = static_cast<int>(glbnodeid + 1);
+        }
         write_data_hdf(coor_part, conn_tet4_part, conn_vox8_part,
                        neighborrankid, mpinode_pointer, mpinode_index,
-                       surfnodes,
+                       surfnodes, global_node_id,
                        "./hdata/" + ToString(iproc, 6, '0') + ".data.h5");
         if (iproc % logskip == 0)
             std::cout << " --- writedatatook " << omp_get_wtime() - t4 << "\n";

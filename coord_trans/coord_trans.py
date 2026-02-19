@@ -1,3 +1,5 @@
+import argparse
+import os
 import numpy as np
 import pandas as pd
 import subprocess
@@ -56,9 +58,31 @@ def enu_to_xyz(lat, lon, de, dn, du, lat_c, lon_c):
                     [np.cos(lat_rad) * np.cos(lon_rad), np.cos(lat_rad) * np.sin(lon_rad), np.sin(lat_rad)]])
     return np.dot(np.linalg.inv(mat_c).T, np.dot(np.linalg.inv(mat), np.array([de, dn, du])))
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="Coordinate transform for AdaptiveFEM.")
+    parser.add_argument(
+        "--root",
+        default=os.environ.get("ROOT"),
+        help="Project root directory (default: $ROOT)",
+    )
+    return parser.parse_args()
+
+args = parse_args()
+if args.root is None:
+    raise SystemExit("ERROR: --root not provided and $ROOT is not set.")
+ROOT = os.path.abspath(args.root)
+
+def rpath(*parts):
+    return os.path.join(ROOT, *parts)
+
+def flatten_layer(layer):
+    zmax = max(layer[:,2])
+    for i in range(layer.shape[0]):
+        layer[i, 2] = zmax
+    return
+
 # octree level
-# nk = 7
-nk = 1
+nk = 2
 
 # target moment tensor (miyagi)
 target_lat = 38.4
@@ -84,7 +108,7 @@ min_lat = target_lat - 1.0
 max_lat = target_lat + 1.0
 
 # grid size
-ds = 1250.
+ds = 2500.
 
 
 # number of layers for JIVSM
@@ -94,17 +118,17 @@ nlayer = 23
 nneighbor = 4
 
 # Extract JIVSM in target area
-jivsm = np.loadtxt("../jivsm/Ejapan_path20111110.dat")
+jivsm = np.loadtxt(rpath("jivsm", "Ejapan_path20111110.dat"))
 header = ["lon", "lat"] + ["elv" + str(i+1).zfill(2) for i in range(nlayer)]
 jivsm = pd.DataFrame(jivsm, columns=header)
 jivsm_region = jivsm[(min_lon <= jivsm["lon"]) & (jivsm["lon"] <= max_lon) & (min_lat <= jivsm["lat"]) & (jivsm["lat"] <= max_lat)]
 jivsm_region.reset_index(inplace=True, drop=True)
-jivsm_region.to_csv("../jivsm/Ejapan_path20111110_area.dat", index=False, sep=" ")
+jivsm_region.to_csv(rpath("jivsm", "Ejapan_path20111110_area.dat"), index=False, sep=" ")
 
 # calculate geoid for grid points of JIVSM
 lat = jivsm_region.loc[:, "lat"]
 lon = jivsm_region.loc[:, "lon"]
-with open("../gsigeo2011_ver2_1_asc/program/input.dat", "w") as f:
+with open(rpath("gsigeo2011_ver2_1_asc", "program", "input.dat"), "w") as f:
     for i in range(jivsm_region.shape[0]):
         j = (i + 1) // 10000
         num = f'{j:4}'
@@ -113,9 +137,9 @@ with open("../gsigeo2011_ver2_1_asc/program/input.dat", "w") as f:
         lon_str = f'{to_dms(lon[i]):15.04f}'
         f.write(num + name + lat_str + lon_str + "\n")
 subprocess.run(["./gsigeome_asc", "input.dat", "output.dat", "gsigeo2011_ver2_1.asc"],
-                cwd="../gsigeo2011_ver2_1_asc/program")
+                cwd=rpath("gsigeo2011_ver2_1_asc", "program"))
 geoid = np.loadtxt(
-    "../gsigeo2011_ver2_1_asc/program/output.dat")[:, 4]
+    rpath("gsigeo2011_ver2_1_asc", "program", "output.dat"))[:, 4]
 jivsm_region["geoid"] = geoid
 
 # calculate ellipsoidal height (elevation + geoid)
@@ -146,10 +170,15 @@ for i in range(nlayer):
         layer[j] = lonlat_to_local(lat, lon, h, lat_c, lon_c, h_c)
     layers.append(layer)
 
+##### flatten top layer ########
+flatten_layer(layers[0])
+################################
+
 # coordinate transformation of the observation data
 # GNSS
 column_names = ["lon", "lat", "elv", "dE", "dN", "dU", "id"]
-df_gnss = pd.read_csv("../coord_trans/original/GNSS_org.dat", delim_whitespace=True, skiprows=1, names=column_names)
+df_gnss = pd.read_csv(rpath("coord_trans", "original", "GNSS_org.dat"),
+                      delim_whitespace=True, skiprows=1, names=column_names)
 
 # exclude invalid observation
 min_lon_ = min_lon + (max_lon - min_lon) * 0.25
@@ -165,7 +194,7 @@ df_gnss.reset_index(inplace=True, drop=True)
 # calculate geoid
 lat = df_gnss["lat"]
 lon = df_gnss["lon"]
-with open("../gsigeo2011_ver2_1_asc/program/input.dat", "w") as f:
+with open(rpath("gsigeo2011_ver2_1_asc", "program", "input.dat"), "w") as f:
     for i in range(len(lat)):
         j = (i + 1) % 10000
         num = f'{j:4}'
@@ -174,9 +203,9 @@ with open("../gsigeo2011_ver2_1_asc/program/input.dat", "w") as f:
         lon_str = f'{to_dms(lon[i]):15.04f}'
         f.write(num + name + lat_str + lon_str + "\n")
 subprocess.run(["./gsigeome_asc", "input.dat", "output.dat", "gsigeo2011_ver2_1.asc"],
-                cwd="../gsigeo2011_ver2_1_asc/program")
+                cwd=rpath("gsigeo2011_ver2_1_asc", "program"))
 geoid = np.loadtxt(
-    "../gsigeo2011_ver2_1_asc/program/output.dat")[:, 4]
+    rpath("gsigeo2011_ver2_1_asc", "program", "output.dat"))[:, 4]
 df_gnss["geoid"] = geoid
 df_gnss["h"] = df_gnss["elv"] + df_gnss["geoid"]
 df_gnss.to_csv("data/GNSS_reduced.dat", index=False, sep=" ")
@@ -258,7 +287,7 @@ df_obs.to_csv("data/observation.dat", index=False, sep=" ")
 # coordinate of centroid
 lat = [target_lat]
 lon = [target_lon]
-with open("../gsigeo2011_ver2_1_asc/program/input.dat", "w") as f:
+with open(rpath("gsigeo2011_ver2_1_asc", "program", "input.dat"), "w") as f:
     for i in range(len(lat)):
         j = (i + 1) // 10000
         num = f'{j:4}'
@@ -267,9 +296,9 @@ with open("../gsigeo2011_ver2_1_asc/program/input.dat", "w") as f:
         lon_str = f'{to_dms(lon[i]):15.04f}'
         f.write(num + name + lat_str + lon_str + "\n")
 subprocess.run(["./gsigeome_asc", "input.dat", "output.dat", "gsigeo2011_ver2_1.asc"],
-                cwd="../gsigeo2011_ver2_1_asc/program")
+                cwd=rpath("gsigeo2011_ver2_1_asc", "program"))
 geoid = np.loadtxt(
-    "../gsigeo2011_ver2_1_asc/program/output.dat")[4]
+    rpath("gsigeo2011_ver2_1_asc", "program", "output.dat"))[4]
 target_geoid = geoid
 target_h = -target_depth + target_geoid
 target_xyz = lonlat_to_local(target_lat, target_lon, target_h, lat_c, lon_c, h_c)
@@ -308,6 +337,7 @@ for layer in layers:
         layer_new[i, 1] = points_new[i, 1]
         layer_new[i, 2] = np.dot(rr[i], zz[ii[i]]) / sum(rr[i])
     layers_new.append(layer_new)
+
 
 # minimum of x, y, z is zero in meshing
 zmax = min(layers_new[0][:,2])
@@ -370,7 +400,7 @@ with open("data/modeling_setting.dat", "w") as f:
     f.write("now\n")
     f.write(str(5) + "\n")
 
-material = np.loadtxt("../jivsm/material.dat", skiprows=1)
+material = np.loadtxt(rpath("jivsm", "material.dat"), skiprows=1)
 with open("data/material.dat", "w") as f:
     for i in range(nlayer):
         f.write("matrial " + str(i + 1) + "\n")

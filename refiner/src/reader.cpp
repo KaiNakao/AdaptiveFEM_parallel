@@ -37,34 +37,38 @@ void read_mesh(const std::string &data_dir, const int &nelem, const int &nnode,
                std::vector<std::vector<int>> &cny,
                std::vector<std::vector<double>> &coor,
                std::vector<int> &matid_arr) {
-    std::vector<int> buf_cny(11 * nelem);
+
+    std::vector<int> buf_cny(5 * nelem);
     std::vector<double> buf_coor(3 * nnode);
+    cny.resize(nelem, std::vector<int>(4));
+    coor.resize(nnode, std::vector<double>(3));
+    matid_arr.resize(nelem);
 
     FILE *fp;
     // Read cny
-    if ((fp = fopen((data_dir + "cny_quad.bin").c_str(), "r")) == NULL) {
-        std::cerr << "Error: cannot open file cny_quad.bin" << std::endl;
+    if ((fp = fopen((data_dir + "cny_linear.bin").c_str(), "r")) == NULL) {
+        std::cerr << "Error: cannot open file cny_linear.bin" << std::endl;
         return;
     }
-    fread(&buf_cny[0], sizeof(int), 11 * nelem, fp);
+    fread(&buf_cny[0], sizeof(int), 5 * nelem, fp);
     fclose(fp);
     for (int ielem = 0; ielem < nelem; ielem++) {
-        for (int inode = 0; inode < 10; inode++) {
-            cny[ielem][inode] = buf_cny[ielem * 11 + inode] - 1;
+        for (int inode = 0; inode < 4; inode++) {
+            cny.at(ielem).at(inode) = buf_cny.at(ielem * 5 + inode) - 1;
         }
-        matid_arr[ielem] = buf_cny[ielem * 11 + 10] - 1;
+        matid_arr.at(ielem) = buf_cny.at(ielem * 5 + 4) - 1;
     }
 
     // Read coor
-    if ((fp = fopen((data_dir + "coor_quad.bin").c_str(), "r")) == NULL) {
-        std::cerr << "Error: cannot open file coor_quad.bin" << std::endl;
+    if ((fp = fopen((data_dir + "coor_linear.bin").c_str(), "r")) == NULL) {
+        std::cerr << "Error: cannot open file coor_linear.bin" << std::endl;
         return;
     }
     fread(&buf_coor[0], sizeof(double), 3 * nnode, fp);
     fclose(fp);
     for (int inode = 0; inode < nnode; inode++) {
         for (int idim = 0; idim < 3; idim++) {
-            coor[inode][idim] = buf_coor[inode * 3 + idim];
+            coor.at(inode).at(idim) = buf_coor.at(inode * 3 + idim);
         }
     }
 }
@@ -105,7 +109,7 @@ void read_material(const std::string &data_dir,
     fread(&buf_material[0], sizeof(double), 3 * material.size(), fp);
     fclose(fp);
 
-    for (int imaterial = 0; imaterial < material.size(); imaterial++) {
+    for (int imaterial = 0; imaterial < static_cast<int>(material.size()); imaterial++) {
         double vp = buf_material[imaterial * 3];
         double vs = buf_material[imaterial * 3 + 1];
         double rho = buf_material[imaterial * 3 + 2];
@@ -115,7 +119,7 @@ void read_material(const std::string &data_dir,
         material[imaterial][1] = mu;
     }
 
-    for (int imaterial = 0; imaterial < material.size(); imaterial++) {
+    for (int imaterial = 0; imaterial < static_cast<int>(material.size()); imaterial++) {
         std::cout << "material: " << imaterial << " ";
         for (int idim = 0; idim < 2; idim++) {
             std::cout << material[imaterial][idim] << " ";
@@ -136,7 +140,7 @@ void read_load_elem(const std::string &data_dir, const int &nelem,
 }
 
 void read_marked_elem(const std::string &data_dir, const int &nelem_marked,
-                      std::vector<int> &marked_elem) {
+                      std::set<int> &marked_elem) {
     FILE *fp;
     if ((fp = fopen((data_dir + "marked_elem_quad.bin").c_str(), "r")) ==
         NULL) {
@@ -144,12 +148,12 @@ void read_marked_elem(const std::string &data_dir, const int &nelem_marked,
                   << std::endl;
         return;
     }
-    fread(&marked_elem[0], sizeof(int), nelem_marked, fp);
-    for (int ielem = 0; ielem < nelem_marked; ielem++) {
-        marked_elem[ielem] -= 1;
-        std::cout << "marked_elem: " << marked_elem[ielem] << std::endl;
-    }
+    std::vector<int> buf_marked_elem(nelem_marked);
+    fread(&buf_marked_elem[0], sizeof(int), nelem_marked, fp);
     fclose(fp);
+    for (int ielem = 0; ielem < nelem_marked; ielem++) {
+        marked_elem.insert(buf_marked_elem[ielem] - 1);
+    }
 }
 
 void read_refinement_edge(const std::string &data_dir,
@@ -200,7 +204,7 @@ void read_tet_flag(const std::string &data_dir,
     if ((fp = fopen((data_dir + "refienment_edge.bin").c_str(), "r")) != NULL) {
         std::vector<char> temp_buf(nelem, 0);
         size_t read_count = fread(temp_buf.data(), sizeof(char), nelem, fp);
-        for (int i = 0; i < read_count; ++i) {
+        for (int i = 0; i < static_cast<int>(read_count); ++i) {
             buf_tet_flag[i] = static_cast<bool>(temp_buf[i]);
         }
         fclose(fp);

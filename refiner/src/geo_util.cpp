@@ -1,4 +1,4 @@
-#include "../inc/geo_util.hpp"
+#include "geo_util.hpp"
 
 double findTetraAspectRatio(std::vector<std::vector<double>> &_verts)
 {
@@ -6,14 +6,14 @@ double findTetraAspectRatio(std::vector<std::vector<double>> &_verts)
 
     double circum_radius = findCircumRadius(_verts);
 
-    double l0, l1, l2, l3, l4, l5, max_l;
-    l0 = findLength(_verts[0], _verts[1]);
-    l1 = findLength(_verts[0], _verts[2]);
-    l2 = findLength(_verts[0], _verts[3]);
-    l3 = findLength(_verts[1], _verts[2]);
-    l4 = findLength(_verts[1], _verts[3]);
-    l5 = findLength(_verts[2], _verts[3]);
-    max_l = std::max({l0, l1, l2, l3, l4, l5});
+    // double l0, l1, l2, l3, l4, l5;
+    // l0 = findLength(_verts[0], _verts[1]);
+    // l1 = findLength(_verts[0], _verts[2]);
+    // l2 = findLength(_verts[0], _verts[3]);
+    // l3 = findLength(_verts[1], _verts[2]);
+    // l4 = findLength(_verts[1], _verts[3]);
+    // l5 = findLength(_verts[2], _verts[3]);
+    // double max_l = std::max({l0, l1, l2, l3, l4, l5});
 
     // std::cout << in_radius << " " << circum_radius << std::endl; 
 
@@ -305,7 +305,7 @@ void outputAspectRatio(const std::string &data_dir,
      std::vector<std::vector<int>> &cny, 
      std::vector<std::vector<double>> &coor, int nelem_marked)
 {
-    std::ofstream file("aspectratio.dat");
+    std::ofstream file(data_dir + "aspectratio.dat");
 
     std::vector<std::vector<double>> verts(4, std::vector<double>(3));
     for (int i=0; i<nelem_marked; ++i)

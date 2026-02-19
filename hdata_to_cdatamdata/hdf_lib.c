@@ -240,6 +240,15 @@ void hdf_write_int_array_( long* fid, char* type, int* array, long* size )
 #endif
 }
 
+/* check dataset existence (1: exists, 0: not exists) */
+int hdf_has_dataset_( long* fid, char* type )
+{
+  if( *fid < 0 || *fid >= GLBHDFSIZE ) return 0;
+  if( !glb_file_id_open[*fid] ) return 0;
+  htri_t exists = H5Lexists(glb_file_id[*fid], type, H5P_DEFAULT);
+  return (exists > 0) ? 1 : 0;
+}
+
 /* get array size */
 void hdf_get_array_size_( long* fid, char* type, long* size )
 {

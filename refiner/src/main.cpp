@@ -3,12 +3,13 @@
 #include <string>
 #include <vector>
 
-#include "inc/mesh_refiner.hpp"
-#include "inc/posterior_error.hpp"
+#include "mesh_refiner.hpp"
 
 int main() {
     std::string data_dir("result/");
 
     Refiner refiner = Refiner(data_dir);
+    refiner.readData();
     refiner.executeRefinement();
+    refiner.writeNewMesh();
 }

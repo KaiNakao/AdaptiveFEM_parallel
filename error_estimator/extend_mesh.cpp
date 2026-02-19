@@ -113,7 +113,6 @@ void extend_mesh(const int &myid,
     }
     MPI_Waitall(2 * nneighbor, &request_arr[0][0], &status_arr[0][0]);
     MPI_Barrier(MPI_COMM_WORLD);
-    std::cout << "here" << std::endl;
 
     for (const auto &p : boundary_face_tmp1) {
         const int &rank = p.first;
