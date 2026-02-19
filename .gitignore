@@ -38,8 +38,8 @@ work/
 !gen_surf_mesh/*.c
 !gen_surf_mesh/*.cpp
 
-!gflib_icc/include/*
-!gflib_icc/lib/*
+!gklib_icc/include/*
+!gklib_icc/lib/*
 
 !gsigeo2011_ver2_1_asc/program/gsigeome_asc
 !gsigeo2011_ver2_1_asc/program/gsigeo2011_ver2_1.asc
